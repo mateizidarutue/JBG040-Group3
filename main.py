@@ -73,6 +73,10 @@ def main(args: argparse.Namespace, activeloop: bool = True) -> None:
 
     mean_losses_train: List[torch.Tensor] = []
     mean_losses_test: List[torch.Tensor] = []
+    accuracy_test: List[torch.Tensor] = []
+    precision_test: List[torch.Tensor] = []
+    recall_test: List[torch.Tensor] = []
+    f1_test: List[torch.Tensor] = []
     
     for e in range(n_epochs):
         if activeloop:
@@ -85,12 +89,16 @@ def main(args: argparse.Namespace, activeloop: bool = True) -> None:
             print(f"\nEpoch {e + 1} training done, loss on train set: {mean_loss}\n")
 
             # Testing:
-            losses = test_model(model, test_sampler, loss_function, device)
+            losses, accuracy, precision, recall, f1 = test_model(model, test_sampler, loss_function, device)
 
             # # Calculating and printing statistics:
             mean_loss = sum(losses) / len(losses)
             mean_losses_test.append(mean_loss)
-            print(f"\nEpoch {e + 1} testing done, loss on test set: {mean_loss}\n")
+            accuracy_test.append(accuracy)
+            precision_test.append(precision)
+            recall_test.append(recall)
+            f1_test.append(f1)
+            print(f"\nEpoch {e + 1} testing done, loss on test set: {mean_loss}\n Accuracy: {accuracy}\n Precision: {precision}\n Recall: {recall}\n")
 
             ### Plotting during training
             plotext.clf()
@@ -102,6 +110,9 @@ def main(args: argparse.Namespace, activeloop: bool = True) -> None:
 
             plotext.show()
 
+
+# code for saving model weights and losses also the image of the plot.
+
     # retrieve current time to label artifacts
     now = datetime.now()
     # check if model_weights/ subdir exists
@@ -112,11 +123,15 @@ def main(args: argparse.Namespace, activeloop: bool = True) -> None:
     torch.save(model.state_dict(), f"model_weights/model_{now.month:02}_{now.day:02}_{now.hour}_{now.minute:02}.txt")
     
     # Create plot of losses
-    figure(figsize=(9, 10), dpi=80)
-    fig, (ax1, ax2) = plt.subplots(2, sharex=True)
+    figure(figsize=(10, 30), dpi=80)
+    fig, (ax1, ax2, ax3, ax4, ax5, ax6) = plt.subplots(6, sharex=True)
     
     ax1.plot(range(1, 1 + n_epochs), [x.detach().cpu() for x in mean_losses_train], label="Train", color="blue")
     ax2.plot(range(1, 1 + n_epochs), [x.detach().cpu() for x in mean_losses_test], label="Test", color="red")
+    ax3.plot(range(1, 1 + n_epochs), accuracy_test, label="Test Accuracy", color="green")
+    ax4.plot(range(1, 1 + n_epochs), precision_test, label="Precision", color="gray")
+    ax5.plot(range(1, 1 + n_epochs), recall_test, label="Recall", color="orange")
+    ax6.plot(range(1, 1 + n_epochs), f1_test, label="f1", color="yellow")
     fig.legend()
     
     # Check if /artifacts/ subdir exists

@@ -3,6 +3,7 @@ import torch
 from dc1.net import Net
 from dc1.batch_sampler import BatchSampler
 from typing import Callable, List
+from sklearn.metrics import precision_score, recall_score, accuracy_score, f1_score
 
 
 def train_model(
@@ -46,6 +47,8 @@ def test_model(
     # Setting the model to evaluation mode:
     model.eval()
     losses = []
+    all_preds = []
+    all_labels = []
     # We need to make sure we do not update our model based on the test data:
     with torch.no_grad():
         for (x, y) in tqdm(test_sampler):
@@ -55,4 +58,14 @@ def test_model(
             prediction = model.forward(x)
             loss = loss_function(prediction, y)
             losses.append(loss)
-    return losses
+
+            predicted_classes = prediction.argmax(dim=1)  # Get class with highest probability
+            all_preds.extend(predicted_classes.cpu().numpy())  # Collect all predictions
+            all_labels.extend(y.cpu().numpy())  # Collect all ground-truth labels
+
+    accuracy = accuracy_score(all_labels, all_preds)
+    precision = precision_score(all_labels, all_preds, average='macro')  # "macro" treats all classes equally
+    recall = recall_score(all_labels, all_preds, average='macro')
+    f1 = f1_score(all_labels, all_preds, average='macro')
+
+    return losses, accuracy, precision, recall, f1
