@@ -9,6 +9,8 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torchsummary import summary  # type: ignore
+from torchvision import transforms
+
 
 # Other imports
 import matplotlib.pyplot as plt  # type: ignore
@@ -21,11 +23,25 @@ from pathlib import Path
 from typing import List
 
 
+transform_train = transforms.Compose([
+    transforms.ToPILImage(),
+    transforms.ColorJitter(brightness=0.2, contrast=0.2),
+    transforms.ToTensor(),
+])
+
+# Define transformations for the test set (without augmentation)
+transform_test = transforms.Compose([
+    transforms.ToPILImage(),
+    transforms.ToTensor(),
+])
+
+
+
 def main(args: argparse.Namespace, activeloop: bool = True) -> None:
 
     # Load the train and test data set
-    train_dataset = ImageDataset(Path("dc1/data/X_train.npy"), Path("dc1/data/Y_train.npy"))
-    test_dataset = ImageDataset(Path("dc1/data/X_test.npy"), Path("dc1/data/Y_test.npy"))
+    train_dataset = ImageDataset(Path("dc1/data/X_train.npy"), Path("dc1/data/Y_train.npy"), transform=transform_train)
+    test_dataset = ImageDataset(Path("dc1/data/X_test.npy"), Path("dc1/data/Y_test.npy"), transform=transform_test)
 
     # Load the Neural Net. NOTE: set number of distinct labels here
     model = Net(n_classes=6)
