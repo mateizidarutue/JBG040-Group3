@@ -7,3 +7,4 @@ artifacts/
 .DS_store
 __pycache__/
 .venv/
+.mypy_cache/
