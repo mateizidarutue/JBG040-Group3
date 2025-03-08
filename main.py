@@ -3,6 +3,7 @@ from dc1.batch_sampler import BatchSampler
 from dc1.image_dataset import ImageDataset
 from dc1.net import Net
 from dc1.train_test import train_model, test_model
+from dc1.loss_factory import LossFactory
 
 # Torch imports
 import torch
@@ -36,7 +37,9 @@ def main(args: argparse.Namespace, activeloop: bool = True) -> None:
 
     # Initialize optimizer(s) and loss function(s)
     optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.1)
-    loss_function = nn.CrossEntropyLoss()
+
+    loss_factory = LossFactory(dataset=train_dataset)
+    loss_function = loss_factory.get_loss(args.loss_fn)
 
     # fetch epoch and batch count from arguments
     n_epochs = args.nb_epochs
@@ -159,6 +162,21 @@ if __name__ == "__main__":
         help="whether to balance batches for class labels",
         default=True,
         type=bool,
+    )
+    parser.add_argument(
+        "--loss_fn",
+        help="Loss function to use (ce, recall_weighted_ce, hierarchical_ce, focal, dice, tversky, combined)",
+        default="combined",
+        type=str,
+        choices=[
+            "ce",
+            "recall_weighted_ce",
+            "hierarchical_ce",
+            "focal",
+            "dice",
+            "tversky",
+            "combined",
+        ],
     )
     args = parser.parse_args()
 
