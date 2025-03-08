@@ -17,7 +17,9 @@ class BatchSampler:
     over-represented classes!
     """
 
-    def __init__(self, batch_size: int, dataset: ImageDataset, balanced: bool = False) -> None:
+    def __init__(
+        self, batch_size: int, dataset: ImageDataset, balanced: bool = False
+    ) -> None:
         self.batch_size = batch_size
         self.dataset = dataset
         self.balanced = balanced

@@ -24,8 +24,12 @@ from typing import List
 def main(args: argparse.Namespace, activeloop: bool = True) -> None:
 
     # Load the train and test data set
-    train_dataset = ImageDataset(Path("dc1/data/X_train.npy"), Path("dc1/data/Y_train.npy"))
-    test_dataset = ImageDataset(Path("dc1/data/X_test.npy"), Path("dc1/data/Y_test.npy"))
+    train_dataset = ImageDataset(
+        Path("dc1/data/X_train.npy"), Path("dc1/data/Y_train.npy")
+    )
+    test_dataset = ImageDataset(
+        Path("dc1/data/X_test.npy"), Path("dc1/data/Y_test.npy")
+    )
 
     # Load the Neural Net. NOTE: set number of distinct labels here
     model = Net(n_classes=6)
@@ -73,14 +77,14 @@ def main(args: argparse.Namespace, activeloop: bool = True) -> None:
 
     mean_losses_train: List[torch.Tensor] = []
     mean_losses_test: List[torch.Tensor] = []
-    
+
     for e in range(n_epochs):
         if activeloop:
 
             # Training:
             losses = train_model(model, train_sampler, optimizer, loss_function, device)
             # Calculating and printing statistics:
-            mean_loss = sum(losses) / len(losses)
+            mean_loss = torch.tensor(sum(losses) / len(losses))
             mean_losses_train.append(mean_loss)
             print(f"\nEpoch {e + 1} training done, loss on train set: {mean_loss}\n")
 
@@ -88,7 +92,7 @@ def main(args: argparse.Namespace, activeloop: bool = True) -> None:
             losses = test_model(model, test_sampler, loss_function, device)
 
             # # Calculating and printing statistics:
-            mean_loss = sum(losses) / len(losses)
+            mean_loss = torch.tensor(sum(losses) / len(losses))
             mean_losses_test.append(mean_loss)
             print(f"\nEpoch {e + 1} testing done, loss on test set: {mean_loss}\n")
 
@@ -107,24 +111,40 @@ def main(args: argparse.Namespace, activeloop: bool = True) -> None:
     # check if model_weights/ subdir exists
     if not Path("model_weights/").exists():
         os.mkdir(Path("model_weights/"))
-    
+
     # Saving the model
-    torch.save(model.state_dict(), f"model_weights/model_{now.month:02}_{now.day:02}_{now.hour}_{now.minute:02}.txt")
-    
+    torch.save(
+        model.state_dict(),
+        f"model_weights/model_{now.month:02}_{now.day:02}_{now.hour}_{now.minute:02}.txt",
+    )
+
     # Create plot of losses
     figure(figsize=(9, 10), dpi=80)
     fig, (ax1, ax2) = plt.subplots(2, sharex=True)
-    
-    ax1.plot(range(1, 1 + n_epochs), [x.detach().cpu() for x in mean_losses_train], label="Train", color="blue")
-    ax2.plot(range(1, 1 + n_epochs), [x.detach().cpu() for x in mean_losses_test], label="Test", color="red")
+
+    ax1.plot(
+        range(1, 1 + n_epochs),
+        [x.detach().cpu() for x in mean_losses_train],
+        label="Train",
+        color="blue",
+    )
+    ax2.plot(
+        range(1, 1 + n_epochs),
+        [x.detach().cpu() for x in mean_losses_test],
+        label="Test",
+        color="red",
+    )
     fig.legend()
-    
+
     # Check if /artifacts/ subdir exists
     if not Path("artifacts/").exists():
         os.mkdir(Path("artifacts/"))
 
     # save plot of losses
-    fig.savefig(Path("artifacts") / f"session_{now.month:02}_{now.day:02}_{now.hour}_{now.minute:02}.png")
+    fig.savefig(
+        Path("artifacts")
+        / f"session_{now.month:02}_{now.day:02}_{now.hour}_{now.minute:02}.png"
+    )
 
 
 if __name__ == "__main__":

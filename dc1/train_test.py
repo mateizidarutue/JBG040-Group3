@@ -6,11 +6,11 @@ from typing import Callable, List
 
 
 def train_model(
-        model: Net,
-        train_sampler: BatchSampler,
-        optimizer: torch.optim.Optimizer,
-        loss_function: Callable[..., torch.Tensor],
-        device: str,
+    model: Net,
+    train_sampler: BatchSampler,
+    optimizer: torch.optim.Optimizer,
+    loss_function: Callable[..., torch.Tensor],
+    device: str,
 ) -> List[torch.Tensor]:
     # Lets keep track of all the losses:
     losses = []
@@ -38,17 +38,17 @@ def train_model(
 
 
 def test_model(
-        model: Net,
-        test_sampler: BatchSampler,
-        loss_function: Callable[..., torch.Tensor],
-        device: str,
+    model: Net,
+    test_sampler: BatchSampler,
+    loss_function: Callable[..., torch.Tensor],
+    device: str,
 ) -> List[torch.Tensor]:
     # Setting the model to evaluation mode:
     model.eval()
     losses = []
     # We need to make sure we do not update our model based on the test data:
     with torch.no_grad():
-        for (x, y) in tqdm(test_sampler):
+        for x, y in tqdm(test_sampler):
             # Making sure our samples are stored on the same device as our model:
             x = x.to(device)
             y = y.to(device)

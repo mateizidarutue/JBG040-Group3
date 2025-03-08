@@ -1,11 +1,7 @@
 import numpy as np
 import torch
-import requests
-import io
-from os import path
 from typing import Tuple
 from pathlib import Path
-import os
 
 
 class ImageDataset:
@@ -43,4 +39,3 @@ class ImageDataset:
         """
 
         return np.load(path)
-
