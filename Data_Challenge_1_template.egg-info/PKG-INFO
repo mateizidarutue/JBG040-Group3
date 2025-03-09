@@ -1,0 +1,30 @@
+Metadata-Version: 2.2
+Name: Data-Challenge-1-template
+Version: 1.0.0
+Home-page: 
+Author: 
+Author-email: 
+Requires-Dist: charset_normalizer==2.1.1
+Requires-Dist: certifi==2022.12.7
+Requires-Dist: colorama==0.4.6
+Requires-Dist: fonttools==4.55.8
+Requires-Dist: idna==3.4
+Requires-Dist: kiwisolver==1.4.4
+Requires-Dist: matplotlib==3.6.2
+Requires-Dist: mypy==0.991
+Requires-Dist: numpy==1.26.4
+Requires-Dist: packaging==24.2
+Requires-Dist: pillow==9.4.0
+Requires-Dist: plotext==5.2.8
+Requires-Dist: pyparsing==3.0.9
+Requires-Dist: python-dateutil==2.8.2
+Requires-Dist: requests==2.28.1
+Requires-Dist: six==1.16.0
+Requires-Dist: torch==2.5.1
+Requires-Dist: torchsummary==1.5.1
+Requires-Dist: tqdm==4.64.1
+Requires-Dist: types-requests==2.28.11.7
+Requires-Dist: types-setuptools==65.6.0.2
+Requires-Dist: types-tqdm==4.64.1
+Requires-Dist: urllib3==1.26.13
+Dynamic: requires-dist
