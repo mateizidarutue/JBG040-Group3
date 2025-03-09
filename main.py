@@ -2,7 +2,7 @@
 from dc1.batch_sampler import BatchSampler
 from dc1.image_dataset import ImageDataset
 from dc1.net import Net
-from dc1.train_test import train_model, test_model
+from dc1.train_test import train_model, test_model, compute_metrics, print_confusion_matrix
 
 # Torch imports
 import torch
@@ -31,7 +31,7 @@ def main(args: argparse.Namespace, activeloop: bool = True) -> None:
     model = Net(n_classes=6)
 
     # Initialize optimizer(s) and loss function(s)
-    optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.1)
+    optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.1, weight_decay=0.001)
     loss_function = nn.CrossEntropyLoss()
 
     # fetch epoch and batch count from arguments
@@ -89,17 +89,14 @@ def main(args: argparse.Namespace, activeloop: bool = True) -> None:
             print(f"\nEpoch {e + 1} training done, loss on train set: {mean_loss}\n")
 
             # Testing:
-            losses, accuracy, precision, recall, f1 = test_model(model, test_sampler, loss_function, device)
-
+            losses, conf_matrix = test_model(model, test_sampler, loss_function, device)
+            precision, recall, f1_score, accuracy = compute_metrics(conf_matrix)
             # # Calculating and printing statistics:
             mean_loss = sum(losses) / len(losses)
             mean_losses_test.append(mean_loss)
-            accuracy_test.append(accuracy)
-            precision_test.append(precision)
-            recall_test.append(recall)
-            f1_test.append(f1)
-            print(f"\nEpoch {e + 1} testing done, loss on test set: {mean_loss}\n Accuracy: {accuracy}\n Precision: {precision}\n Recall: {recall}\n")
 
+            print(f"\nEpoch {e + 1} testing done, loss on test set: {mean_loss}\n")
+            
             ### Plotting during training
             plotext.clf()
             plotext.scatter(mean_losses_train, label="train")
@@ -109,6 +106,9 @@ def main(args: argparse.Namespace, activeloop: bool = True) -> None:
             plotext.xticks([i for i in range(len(mean_losses_train) + 1)])
 
             plotext.show()
+            for i in range(len(precision)):
+                print(f"Class {i}: Precision={precision[i]:.2f}, Recall={recall[i]:.2f}, F1 Score={f1_score[i]:.2f}, Accuracy={accuracy[i]:.2f}")
+            print_confusion_matrix(conf_matrix)
 
 
 # code for saving model weights and losses also the image of the plot.
@@ -124,14 +124,10 @@ def main(args: argparse.Namespace, activeloop: bool = True) -> None:
     
     # Create plot of losses
     figure(figsize=(10, 30), dpi=80)
-    fig, (ax1, ax2, ax3, ax4, ax5, ax6) = plt.subplots(6, sharex=True)
+    fig, (ax1, ax2) = plt.subplots(2, sharex=True)
     
     ax1.plot(range(1, 1 + n_epochs), [x.detach().cpu() for x in mean_losses_train], label="Train", color="blue")
     ax2.plot(range(1, 1 + n_epochs), [x.detach().cpu() for x in mean_losses_test], label="Test", color="red")
-    ax3.plot(range(1, 1 + n_epochs), accuracy_test, label="Test Accuracy", color="green")
-    ax4.plot(range(1, 1 + n_epochs), precision_test, label="Precision", color="gray")
-    ax5.plot(range(1, 1 + n_epochs), recall_test, label="Recall", color="orange")
-    ax6.plot(range(1, 1 + n_epochs), f1_test, label="f1", color="yellow")
     fig.legend()
     
     # Check if /artifacts/ subdir exists
@@ -148,7 +144,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--nb_epochs", help="number of training iterations", default=10, type=int
     )
-    parser.add_argument("--batch_size", help="batch_size", default=25, type=int)
+    parser.add_argument("--batch_size", help="batch_size", default=32, type=int)
     parser.add_argument(
         "--balanced_batches",
         help="whether to balance batches for class labels",

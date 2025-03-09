@@ -4,6 +4,9 @@ from dc1.net import Net
 from dc1.batch_sampler import BatchSampler
 from typing import Callable, List
 from sklearn.metrics import precision_score, recall_score, accuracy_score, f1_score
+from sklearn.metrics import confusion_matrix
+import numpy as np
+from tabulate import tabulate
 
 
 def train_model(
@@ -63,9 +66,34 @@ def test_model(
             all_preds.extend(predicted_classes.cpu().numpy())  # Collect all predictions
             all_labels.extend(y.cpu().numpy())  # Collect all ground-truth labels
 
-    accuracy = accuracy_score(all_labels, all_preds)
-    precision = precision_score(all_labels, all_preds, average='macro')  # "macro" treats all classes equally
-    recall = recall_score(all_labels, all_preds, average='macro')
-    f1 = f1_score(all_labels, all_preds, average='macro')
+    conf_matrix = confusion_matrix(all_labels, all_preds)
 
-    return losses, accuracy, precision, recall, f1
+    return losses, conf_matrix
+
+def compute_metrics(conf_matrix):
+    num_classes = conf_matrix.shape[0]  # Get number of classes
+    precision = np.zeros(num_classes)
+    recall = np.zeros(num_classes)
+    f1_score = np.zeros(num_classes)
+    accuracy = np.zeros(num_classes)
+
+    for i in range(num_classes):
+        TP = conf_matrix[i, i]  # True Positives
+        FP = conf_matrix[:, i].sum() - TP  # False Positives
+        FN = conf_matrix[i, :].sum() - TP  # False Negatives
+        TN = conf_matrix.sum() - (TP + FP + FN)  # True Negatives
+
+        precision[i] = TP / (TP + FP) if (TP + FP) > 0 else 0
+        recall[i] = TP / (TP + FN) if (TP + FN) > 0 else 0
+        f1_score[i] = (2 * precision[i] * recall[i]) / (precision[i] + recall[i]) if (precision[i] + recall[i]) > 0 else 0
+        accuracy[i] = (TP + TN) / conf_matrix.sum()
+
+    return precision, recall, f1_score, accuracy
+
+def print_confusion_matrix(conf_matrix, class_names=None):
+    class_names = ["Atelectasis", "Effusion", "Infiltration", "No finding", "Nodule", "Pneumothorax"]
+    if class_names is None:
+        class_names = [f"Class {i}" for i in range(len(conf_matrix))]
+    table = [[class_names[i]] + list(row) for i, row in enumerate(conf_matrix)]
+    print("\nConfusion Matrix:\n")
+    print(tabulate(table, headers=["Class ↓ / Predicted →"] + class_names, tablefmt="grid"))
