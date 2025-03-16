@@ -5,6 +5,8 @@ class Net(nn.Module):
     def __init__(self, n_classes: int = 6) -> None:
         super(Net, self).__init__()
 
+        self.min_max_norm = MinMaxNormalization()  # Min-Max Normalization Layer
+
         self.cnn_layers = nn.Sequential(
             #Convolution Block 1
             nn.Conv2d(1, 32, kernel_size=3, stride=1, padding=1),
@@ -38,6 +40,7 @@ class Net(nn.Module):
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = self.min_max_norm(x)  # Apply Min-Max Normalization
         x = self.cnn_layers(x)
         x = self.fc_layers(x)
         return x
