@@ -1,0 +1,89 @@
+architecture:
+  conv_layers:
+    - [32, 64, 128]
+    - [64, 128, 256]
+  kernel_size: [3, 5]
+  stride: [1, 2]
+  padding: [0, 1]
+  use_batch_norm: [true, false]
+  use_layer_norm: [true, false]
+  use_group_norm: [true, false]
+  use_instance_norm: [true, false]
+  min_max_scaling: [true, false]
+  activation: ['relu', 'leaky_relu', 'prelu', 'gelu', 'swish']
+  weight_initialization: ['xavier', 'kaiming', 'normal', 'uniform']
+  freeze_layers: [true, false]
+
+fully_connected:
+  hidden_layers:
+    - [256, 128]
+    - [512, 256, 128]
+  activation: ['relu', 'tanh', 'prelu', 'gelu', 'swish']
+
+training:
+  learning_rate:
+    min: 0.0001
+    max: 0.01
+  momentum:
+    min: 0.0
+    max: 0.99
+  weight_decay_on_bias: [true, false]
+  gradient_clipping:
+    min: 0.1
+    max: 10.0
+  optimizer: ['adam', 'sgd', 'rmsprop']
+  epochs: [10, 20, 30, 40]
+  scheduler: ['constant', 'step', 'exponential']
+  decay_factor:
+    min: 0.1
+    max: 0.9
+  warmup_steps: [0, 100, 500]
+  early_stopping:
+    enabled: [true, false]
+    patience: [5, 10, 15]
+  shuffle: [true, false]
+
+regularization:
+  use_l1: [true, false]
+  l1_strength:
+    min: 0.00001
+    max: 0.001
+  use_l2: [true, false]
+  l2_strength:
+    min: 0.00001
+    max: 0.001
+  use_dropout: [true, false]
+  dropout_rate:
+    min: 0.1
+    max: 0.5
+  dropout_position: ['after_conv', 'after_activation', 'after_fc']
+  use_dropconnect: [true, false]
+  dropconnect_rate:
+    min: 0.1
+    max: 0.5
+
+augmentation:
+  use_brightness: [true, false]
+  brightness:
+    min: 0
+    max: 0.5
+  use_contrast: [true, false]
+  contrast:
+    min: 0
+    max: 0.5
+  use_flip: [true, false]
+  flip:
+    min: 0
+    max: 1.0
+  use_crop: [true, false]
+  crop:
+    min: 50
+    max: 100
+  use_upscale: [true, false]
+  upscale:
+    min: 1.0
+    max: 2.0
+  upscale_mode: ['cubic', 'bilinear', 'nearest']
+
+evaluation:
+  metrics: ['accuracy', 'precision', 'recall', 'f1']

@@ -22,7 +22,7 @@ from pathlib import Path
 from typing import List
 
 
-def main(args: argparse.Namespace, activeloop: bool = True) -> None:
+def main(hyperparams: dict, activeloop: bool = True) -> None:
 
     # Load the train and test data set
     train_dataset = ImageDataset(
@@ -36,14 +36,16 @@ def main(args: argparse.Namespace, activeloop: bool = True) -> None:
     model = Net(n_classes=6)
 
     # Initialize optimizer(s) and loss function(s)
-    optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.1)
+    optimizer = OptimizerFactory.get_optimizer(
+        model, hyperparams["optimizer"], hyperparams["lr"], hyperparams["weight_decay"]
+    )
+    # optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.1)
 
-    loss_factory = LossFactory(dataset=train_dataset)
-    loss_function = loss_factory.get_loss(args.loss_fn)
+    loss_function = LossFactory(dataset=train_dataset).get_loss(hyperparams["loss_fn"])
 
     # fetch epoch and batch count from arguments
-    n_epochs = args.nb_epochs
-    batch_size = args.batch_size
+    n_epochs = hyperparams["nb_epochs"]
+    batch_size = hyperparams["batch_size"]
 
     # IMPORTANT! Set this to True to see actual errors regarding
     # the structure of your model (GPU acceleration hides them)!
