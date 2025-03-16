@@ -10,6 +10,8 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torchsummary import summary  # type: ignore
+from torchvision import transforms
+
 
 # Other imports
 import matplotlib.pyplot as plt  # type: ignore
