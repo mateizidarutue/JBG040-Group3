@@ -10,8 +10,6 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torchsummary import summary  # type: ignore
-from torchvision import transforms
-
 
 # Other imports
 import matplotlib.pyplot as plt  # type: ignore
@@ -38,7 +36,7 @@ def main(hyperparams: dict, activeloop: bool = True) -> None:
     model = Net(n_classes=6)
 
     # Initialize optimizer(s) and loss function(s)
-    optimizer = OptimizerFactory.get_optimizer(
+    optimizer = OptimizerFactor.get_optimizer(
         model, hyperparams["optimizer"], hyperparams["lr"], hyperparams["weight_decay"]
     )
     # optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.1)
@@ -96,17 +94,13 @@ def main(hyperparams: dict, activeloop: bool = True) -> None:
             print(f"\nEpoch {e + 1} training done, loss on train set: {mean_loss}\n")
 
             # Testing:
-            losses, conf_matrix = test_model(model, test_sampler, loss_function, device)
-            precision, recall, f1_score, accuracy = compute_metrics(conf_matrix)
-            for i in range(len(precision)):
-                new_data = torch.tensor([[precision[i], recall[i], f1_score[i], accuracy[i]]])
-                metrics[f"Class {i}"] = torch.cat((metrics[f"Class {i}"], new_data), dim=0)
+            losses = test_model(model, test_sampler, loss_function, device)
+
             # # Calculating and printing statistics:
             mean_loss = torch.tensor(sum(losses) / len(losses))
             mean_losses_test.append(mean_loss)
-
             print(f"\nEpoch {e + 1} testing done, loss on test set: {mean_loss}\n")
-            
+
             ### Plotting during training
             plotext.clf()
             plotext.scatter(mean_losses_train, label="train")
@@ -116,13 +110,6 @@ def main(hyperparams: dict, activeloop: bool = True) -> None:
             plotext.xticks([i for i in range(len(mean_losses_train) + 1)])
 
             plotext.show()
-            for i in range(len(precision)):
-                print(f"Class {i}: Precision={precision[i]:.2f}, Recall={recall[i]:.2f}, F1 Score={f1_score[i]:.2f}, Accuracy={accuracy[i]:.2f}")
-            print_confusion_matrix(conf_matrix)
-            print(metrics)
-
-
-# code for saving model weights and losses also the image of the plot.
 
     # retrieve current time to label artifacts
     now = datetime.now()
@@ -137,7 +124,7 @@ def main(hyperparams: dict, activeloop: bool = True) -> None:
     )
 
     # Create plot of losses
-    figure(figsize=(10, 48), dpi=80)
+    figure(figsize=(9, 10), dpi=80)
     fig, (ax1, ax2) = plt.subplots(2, sharex=True)
 
     ax1.plot(
@@ -164,22 +151,6 @@ def main(hyperparams: dict, activeloop: bool = True) -> None:
         / f"session_{now.month:02}_{now.day:02}_{now.hour}_{now.minute:02}.png"
     )
 
-    experiments = torch.arange(1, metrics["Class 0"].shape[0] + 1)
-    metric_names = ["Precision", "Recall", "F1 Score", "Accuracy"]
-    fig, axes = plt.subplots(len(metrics), 1, figsize=(10, 4 * len(metrics)), sharex=True)
-
-    for ax, (class_name, tensor_data) in zip(axes, metrics.items()):
-        for i, metric_name in enumerate(metric_names):
-            ax.plot(experiments.numpy(), tensor_data[:, i].numpy(), marker="o", label=f"{metric_name}")
-
-        ax.set_title(f"Metrics for {class_name}")
-        ax.set_xlabel("Experiment")
-        ax.set_ylabel("Score")
-        ax.legend(title="Metric", loc="best")
-        ax.grid()
-
-    plt.tight_layout()
-    fig.savefig(Path("artifacts") / f"session_{now.month:02}_{now.day:02}_{now.hour}_{now.minute:02}_eval.png")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -187,7 +158,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--nb_epochs", help="number of training iterations", default=10, type=int
     )
-    parser.add_argument("--batch_size", help="batch_size", default=32, type=int)
+    parser.add_argument("--batch_size", help="batch_size", default=25, type=int)
     parser.add_argument(
         "--balanced_batches",
         help="whether to balance batches for class labels",
