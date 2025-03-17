@@ -1,9 +1,10 @@
 from utils.losses import FocalLoss, DiceLoss, TverskyLoss, CombinedLoss
+from typing import Dict, Any
 import torch.nn as nn
 
 class LossFactory:
     @staticmethod
-    def get_loss(config):
+    def get_loss(config: Dict[str, Any]) -> nn.Module:
         loss_type = config['loss_function']['type']
         gamma = config['loss_function']['gamma']
         alpha = config['loss_function']['alpha']

@@ -1,8 +1,9 @@
 import torchvision.transforms as transforms
+from typing import Dict, Any
 
 class AugmentationFactory:
     @staticmethod
-    def get_augmentations(config):
+    def get_augmentations(config: Dict[str, Any]) -> transforms.Compose:
         augmentations = []
 
         if config["use_flip"]:
