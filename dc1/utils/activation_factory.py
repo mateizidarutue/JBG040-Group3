@@ -1,0 +1,21 @@
+import torch.nn as nn
+
+class ActivationFactory:
+    @staticmethod
+    def get_activation(config):
+        name = config["activation"]
+
+        if name == 'relu':
+            return nn.ReLU(inplace=True)
+        elif name == 'leaky_relu':
+            return nn.LeakyReLU(inplace=True)
+        elif name == 'prelu':
+            return nn.PReLU()
+        elif name == 'gelu':
+            return nn.GELU()
+        elif name == 'swish':
+            return nn.SiLU()
+        elif name == 'tanh':
+            return nn.Tanh()
+        else:
+            raise ValueError(f"Unsupported activation: {name}")
