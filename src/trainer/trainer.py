@@ -1,50 +1,35 @@
+from optuna.pruners import HyperbandPruner
 import torch
+from torch.utils.data import DataLoader
 import numpy as np
 from torch import nn
-from typing import Dict
-from torch.optim import Optimizer
-from torch.optim.lr_scheduler import _LRScheduler
+from typing import Dict, Any
+from dc1.models.cnn import CNN
+from dc1.utils.loss_factory import LossFactory
+from dc1.utils.optimizer_factory import OptimizerFactory
+from dc1.utils.scheduler_factory import SchedulerFactory
+from optuna import Trial
 
 
 class Trainer:
-    def __init__(
-        self,
-        model: nn.Module,
-        optimizer: Optimizer,
-        loss_fn,
-        scheduler: _LRScheduler,
-        data_loader,
-        device,
-        config,
-    ):
-        self.model = model
-        self.optimizer = optimizer
-        self.loss_fn = loss_fn
-        self.scheduler = scheduler
+    def __init__(self, config: Dict[str, Any], data_loader: DataLoader, device: str):
         self.data_loader = data_loader
         self.device = device
         self.config = config
 
-    def train(self, trial, optimizer_instance):
-        model: CNN = CNN(params)
-        model.to(device)
+    def train(self, trial: Trial, optimizer_instance):
+        model = CNN(self.config)
+        model.to(self.device)
 
-        data_loader: DataLoader = DataLoader(
-            self.dataset, batch_size=self.batch_size, shuffle=True
-        )
+        loss_fn = LossFactory.get_loss(self.config)
+        loss_fn.to(self.device)
 
-        loss_fn: nn.Module = LossFactory.get_loss(
-            self.config["training"]["loss_function"]
-        )
-        loss_fn.to(device)
+        optimizer_model = OptimizerFactory.get_optimizer(model, self.config)
+        scheduler = SchedulerFactory.get_scheduler(optimizer_model, self.config)
 
-        optimizer_model = OptimizerFactory.get_optimizer(model, params)
-        scheduler = SchedulerFactory.get_scheduler(
-            optimizer_model, self.config["training"]["scheduler"]
-        )
-
-        self.model.train()
-        max_epochs = trial.study.pruner._max_resource
+        model.train()
+        pruner: HyperbandPruner = trial.study.pruner
+        max_epochs = pruner._max_resource
 
         for epoch in range(1, max_epochs + 1):
             epoch_losses = []
@@ -53,11 +38,11 @@ class Trainer:
                 images = images.to(self.device)
                 labels = labels.to(self.device)
 
-                self.optimizer.zero_grad()
-                outputs = self.model(images)
-                loss = self.loss_fn(outputs, labels)
+                optimizer_model.zero_grad()
+                outputs = model(images)
+                loss = loss_fn(outputs, labels)
                 loss.backward()
-                self.optimizer.step()
+                optimizer_model.step()
                 epoch_losses.append(loss.item())
 
             avg_loss = np.mean(epoch_losses)
@@ -68,10 +53,10 @@ class Trainer:
             if trial.should_prune():
                 raise optuna.exceptions.TrialPruned()
 
-            if isinstance(self.scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
-                self.scheduler.step(avg_loss)
+            if isinstance(scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
+                scheduler.step(avg_loss)
             else:
-                self.scheduler.step()
+                scheduler.step()
 
         return avg_loss
 

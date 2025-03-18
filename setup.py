@@ -5,11 +5,11 @@ with open(Path("requirements.txt"), "r") as requirements:
     dependencies = requirements.readlines()
 
 setup(
-    name="Data-Challenge-1-template",
+    name="JBG040-Group3",
     version="1.0.0",
-    packages=["dc1"],
+    packages=["src"],
     package_data={
-        "dc1": ["py.typed"],
+        "src": ["py.typed"],
     },
     url="",
     license="",
