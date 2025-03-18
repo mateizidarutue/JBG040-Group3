@@ -1,7 +1,7 @@
 from tqdm import tqdm
 import torch
 from dc1.net import Net
-from dc1.batch_sampler import BatchSampler
+from dc1.dataset.batch_sampler import BatchSampler
 from typing import Callable, List
 
 

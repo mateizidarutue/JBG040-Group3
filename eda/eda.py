@@ -2,10 +2,12 @@ import numpy as np
 from eda.graphs import *
 from torchvision import transforms
 from pathlib import Path
-from dc1.image_dataset import ImageDataset
+from dc1.dataset.image_dataset import ImageDataset
 
-data1 = np.load("dc1/data/X_train.npy")
-data2 = np.load("dc1/data/Y_train.npy")
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+data1 = np.load(BASE_DIR / "dc1/data/X_train.npy")
+data2 = np.load(BASE_DIR / "dc1/data/Y_train.npy")
 
 print("shape of data X_train:")
 print(data1.shape)
@@ -24,8 +26,8 @@ transform_augment = transforms.Compose([
 ])
 
 aug_dataset = ImageDataset(
-    Path("dc1/data/X_train.npy"),
-    Path("dc1/data/Y_train.npy"),
+    Path(BASE_DIR / "dc1/data/X_train.npy"),
+    Path(BASE_DIR / "dc1/data/Y_train.npy"),
     transform=transform_augment
 )
     

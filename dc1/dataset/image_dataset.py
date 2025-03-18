@@ -5,17 +5,8 @@ from pathlib import Path
 
 
 class ImageDataset:
-    """
-    Creates a DataSet from numpy arrays while keeping the data
-    in the more efficient numpy arrays for as long as possible and only
-    converting to torchtensors when needed (torch tensors are the objects used
-    to pass the data through the neural network and apply weights).
-    """
-
     def __init__(self, x: Path, y: Path) -> None:
-        # Target labels
         self.targets = ImageDataset.load_numpy_arr_from_npy(y)
-        # Images
         self.imgs = ImageDataset.load_numpy_arr_from_npy(x)
 
     def __len__(self) -> int:
@@ -28,14 +19,4 @@ class ImageDataset:
 
     @staticmethod
     def load_numpy_arr_from_npy(path: Path) -> np.ndarray:
-        """
-        Loads a numpy array from local storage.
-
-        Input:
-        path: local path of file
-
-        Outputs:
-        dataset: numpy array with input features or labels
-        """
-
         return np.load(path)

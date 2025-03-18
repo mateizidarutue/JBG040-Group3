@@ -1,185 +1,49 @@
-# Custom imports
-from dc1.batch_sampler import BatchSampler
-from dc1.image_dataset import ImageDataset
-from dc1.net import Net
-from dc1.train_test import train_model, test_model
-from dc1.loss_factory import LossFactory
-
-# Torch imports
 import torch
-import torch.nn as nn
-import torch.optim as optim
-from torchsummary import summary  # type: ignore
-
-# Other imports
-import matplotlib.pyplot as plt  # type: ignore
-from matplotlib.pyplot import figure
-import os
-import argparse
-import plotext  # type: ignore
-from datetime import datetime
+import yaml
 from pathlib import Path
-from typing import List
+from dc1.trainer.trainer import Trainer
+from dc1.search.optuna_bayes_hyperband import OptunaBayesHyperband
+from dc1.dataset.image_dataset import ImageDataset
 
 
-def main(hyperparams: dict, activeloop: bool = True) -> None:
+def load_config(config_path: str):
+    with open(config_path, "r") as f:
+        return yaml.safe_load(f)
 
-    # Load the train and test data set
-    train_dataset = ImageDataset(
-        Path("dc1/data/X_train.npy"), Path("dc1/data/Y_train.npy")
-    )
-    test_dataset = ImageDataset(
-        Path("dc1/data/X_test.npy"), Path("dc1/data/Y_test.npy")
-    )
 
-    # Load the Neural Net. NOTE: set number of distinct labels here
-    model = Net(n_classes=6)
+def main():
+    config_path = "config.yaml"
+    config = load_config(config_path)
 
-    # Initialize optimizer(s) and loss function(s)
-    optimizer = OptimizerFactor.get_optimizer(
-        model, hyperparams["optimizer"], hyperparams["lr"], hyperparams["weight_decay"]
-    )
-    # optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.1)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    loss_function = LossFactory(dataset=train_dataset).get_loss(hyperparams["loss_fn"])
+    train_data_path = Path(config["dataset"]["train_data"])
+    train_labels_path = Path(config["dataset"]["train_labels"])
+    dataset = ImageDataset(train_data_path, train_labels_path)
 
-    # fetch epoch and batch count from arguments
-    n_epochs = hyperparams["nb_epochs"]
-    batch_size = hyperparams["batch_size"]
-
-    # IMPORTANT! Set this to True to see actual errors regarding
-    # the structure of your model (GPU acceleration hides them)!
-    # Also make sure you set this to False again for actual model training
-    # as training your model with GPU-acceleration (CUDA/MPS) is much faster.
-    DEBUG = False
-
-    # Moving our model to the right device (CUDA will speed training up significantly!)
-    if torch.cuda.is_available() and not DEBUG:
-        print("@@@ CUDA device found, enabling CUDA training...")
-        device = "cuda"
-        model.to(device)
-        # Creating a summary of our model and its layers:
-        summary(model, (1, 128, 128), device=device)
-    elif (
-        torch.backends.mps.is_available() and not DEBUG
-    ):  # PyTorch supports Apple Silicon GPU's from version 1.12
-        print("@@@ Apple silicon device enabled, training with Metal backend...")
-        device = "mps"
-        model.to(device)
-    else:
-        print("@@@ No GPU boosting device found, training on CPU...")
-        device = "cpu"
-        # Creating a summary of our model and its layers:
-        summary(model, (1, 128, 128), device=device)
-
-    # Lets now train and test our model for multiple epochs:
-    train_sampler = BatchSampler(
-        batch_size=batch_size, dataset=train_dataset, balanced=args.balanced_batches
-    )
-    test_sampler = BatchSampler(
-        batch_size=100, dataset=test_dataset, balanced=args.balanced_batches
+    trainer = Trainer(
+        config=config,
+        dataset=dataset,
+        batch_size=config["batch_size"],
+        device=device,
     )
 
-    mean_losses_train: List[torch.Tensor] = []
-    mean_losses_test: List[torch.Tensor] = []
-
-    for e in range(n_epochs):
-        if activeloop:
-
-            # Training:
-            losses = train_model(model, train_sampler, optimizer, loss_function, device)
-            # Calculating and printing statistics:
-            mean_loss = torch.tensor(sum(losses) / len(losses))
-            mean_losses_train.append(mean_loss)
-            print(f"\nEpoch {e + 1} training done, loss on train set: {mean_loss}\n")
-
-            # Testing:
-            losses = test_model(model, test_sampler, loss_function, device)
-
-            # # Calculating and printing statistics:
-            mean_loss = torch.tensor(sum(losses) / len(losses))
-            mean_losses_test.append(mean_loss)
-            print(f"\nEpoch {e + 1} testing done, loss on test set: {mean_loss}\n")
-
-            ### Plotting during training
-            plotext.clf()
-            plotext.scatter(mean_losses_train, label="train")
-            plotext.scatter(mean_losses_test, label="test")
-            plotext.title("Train and test loss")
-
-            plotext.xticks([i for i in range(len(mean_losses_train) + 1)])
-
-            plotext.show()
-
-    # retrieve current time to label artifacts
-    now = datetime.now()
-    # check if model_weights/ subdir exists
-    if not Path("model_weights/").exists():
-        os.mkdir(Path("model_weights/"))
-
-    # Saving the model
-    torch.save(
-        model.state_dict(),
-        f"model_weights/model_{now.month:02}_{now.day:02}_{now.hour}_{now.minute:02}.txt",
+    search = OptunaBayesHyperband(
+        min_budget=config["min_budget"],
+        max_budget=config["max_epochs"],
+        eta=config["eta"],
+        trials_per_batch=config["trials_per_batch"],
+        number_of_runs=config["number_of_runs"],
+        training_fn=trainer.train,
+        config_path=config_path,
+        study_name="cnn_hyperparameter_search",
+        direction=config["direction"],
     )
 
-    # Create plot of losses
-    figure(figsize=(9, 10), dpi=80)
-    fig, (ax1, ax2) = plt.subplots(2, sharex=True)
+    search.run()
 
-    ax1.plot(
-        range(1, 1 + n_epochs),
-        [x.detach().cpu() for x in mean_losses_train],
-        label="Train",
-        color="blue",
-    )
-    ax2.plot(
-        range(1, 1 + n_epochs),
-        [x.detach().cpu() for x in mean_losses_test],
-        label="Test",
-        color="red",
-    )
-    fig.legend()
-
-    # Check if /artifacts/ subdir exists
-    if not Path("artifacts/").exists():
-        os.mkdir(Path("artifacts/"))
-
-    # save plot of losses
-    fig.savefig(
-        Path("artifacts")
-        / f"session_{now.month:02}_{now.day:02}_{now.hour}_{now.minute:02}.png"
-    )
+    search.save_results("results.json")
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument(
-        "--nb_epochs", help="number of training iterations", default=10, type=int
-    )
-    parser.add_argument("--batch_size", help="batch_size", default=25, type=int)
-    parser.add_argument(
-        "--balanced_batches",
-        help="whether to balance batches for class labels",
-        default=True,
-        type=bool,
-    )
-    parser.add_argument(
-        "--loss_fn",
-        help="Loss function to use (ce, recall_weighted_ce, hierarchical_ce, focal, dice, tversky, combined)",
-        default="combined",
-        type=str,
-        choices=[
-            "ce",
-            "recall_weighted_ce",
-            "hierarchical_ce",
-            "focal",
-            "dice",
-            "tversky",
-            "combined",
-        ],
-    )
-    args = parser.parse_args()
-
-    main(args)
+    main()

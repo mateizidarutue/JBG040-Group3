@@ -1,22 +1,21 @@
 import torch.nn as nn
 from typing import Dict, Any
 
+
 class ActivationFactory:
     @staticmethod
-    def get_activation(config: Dict[str, Any]) -> nn.Module:
-        name = config["activation"]
-
-        if name == 'relu':
+    def get_activation(activation_type: str) -> nn.Module:
+        if activation_type == "relu":
             return nn.ReLU(inplace=True)
-        elif name == 'leaky_relu':
+        elif activation_type == "leaky_relu":
             return nn.LeakyReLU(inplace=True)
-        elif name == 'prelu':
+        elif activation_type == "prelu":
             return nn.PReLU()
-        elif name == 'gelu':
+        elif activation_type == "gelu":
             return nn.GELU()
-        elif name == 'swish':
+        elif activation_type == "swish":
             return nn.SiLU()
-        elif name == 'tanh':
+        elif activation_type == "tanh":
             return nn.Tanh()
         else:
-            raise ValueError(f"Unsupported activation: {name}")
+            raise ValueError(f"Unsupported activation: {activation_type}")
