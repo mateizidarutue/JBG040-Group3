@@ -12,6 +12,7 @@ from src.utils.augmentation_factory import AugmentationFactory
 from src.utils.metrics_calculator import MetricsCalculator
 from optuna import Trial
 from torch import Tensor
+from tqdm.auto import tqdm
 
 
 class Trainer:
@@ -43,13 +44,16 @@ class Trainer:
 
         model.train()
 
-        for epoch in range(1, max_epochs + 1):
+        epoch_pbar = tqdm(range(1, max_epochs + 1), desc=f"Trial {trial.number} Epochs", leave=True)
+        for epoch in epoch_pbar:
             epoch_losses = []
 
-            for images, labels in self.train_loader:
+            batch_pbar = tqdm(self.train_loader, desc=f"Epoch {epoch}", leave=False)
+            for images, labels in batch_pbar:
                 images: Tensor = images.to(self.device)
                 labels: Tensor = labels.to(self.device)
                 images = augmentation(images)
+                images = images.float()
                 optimizer.zero_grad()
                 outputs: Tensor = model(images)
                 loss: Tensor = loss_fn(outputs, labels)
@@ -61,8 +65,16 @@ class Trainer:
                 optimizer.step()
                 epoch_losses.append(loss.item())
 
+                batch_pbar.set_postfix({"loss": f"{loss.item():.4f}"})
+
             avg_loss = np.mean(epoch_losses)
-            val_loss, _ = self.test(model, self.val_loader, loss_fn, False)
+            val_loss, _ = self.test(model, self.val_loader, params, False)
+
+            epoch_pbar.set_postfix({
+                "train_loss": f"{avg_loss:.4f}",
+                "val_loss": f"{val_loss:.4f}"
+            })
+
             self.trial_histories.append(
                 {
                     "epoch": epoch,

@@ -3,6 +3,7 @@ from typing import Dict, List, Any
 from src.search.param_sampler import ParamSampler
 from torch.utils.data import DataLoader
 from src.trainer.trainer import Trainer
+from tqdm.auto import tqdm
 
 
 class OptunaBayesHyperband:
@@ -67,19 +68,32 @@ class OptunaBayesHyperband:
         total_trials = self.trials_per_search * self.searches_number
         print(f"Starting optimization with {total_trials} total trials...")
 
-        for batch in range(self.searches_number):
-            print(f"\n--- Batch {batch + 1}/{self.searches_number} ---")
+        batch_pbar = tqdm(range(self.searches_number), desc="Search Batches", leave=True)
+        for batch in batch_pbar:
+            batch_pbar.set_postfix({"batch": f"{batch + 1}/{self.searches_number}"})
             self._run_batch(self.trials_per_search)
 
     def _run_batch(self, batch_size: int):
         print(f"\n=== Running Batch of Size {batch_size} ===")
 
-        for _ in range(batch_size):
+        trial_pbar = tqdm(range(batch_size), desc="Trials in Batch", leave=True)
+        for _ in trial_pbar:
             trial = self.study.ask()
 
             try:
-                self.study.tell(trial, self.objective(trial))
+                result = self.objective(trial)
+                self.study.tell(trial, result)
+                trial_pbar.set_postfix({
+                    "trial": trial.number,
+                    "value": f"{result:.4f}",
+                    "state": "completed"
+                })
             except optuna.exceptions.TrialPruned as e:
+                self.study.tell(trial, state=optuna.trial.TrialState.PRUNED)
+                trial_pbar.set_postfix({
+                    "trial": trial.number,
+                    "state": "pruned"
+                })
                 print(f"Trial {trial.number} pruned: {e}")
 
         print(f"\n=== Finished Batch of Size {batch_size} ===")

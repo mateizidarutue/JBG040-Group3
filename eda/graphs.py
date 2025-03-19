@@ -54,7 +54,6 @@ def show_images_around_index(data_images, data_labels, center_index):
         plt.imshow(data_images[idx, 0, :, :], cmap="gray")
         plt.axis("off")
 
-        # Convert numerical label to class name
         label_name = class_labels.get(data_labels[idx], "Unknown")
 
         if idx == center_index:

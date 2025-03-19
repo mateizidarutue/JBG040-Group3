@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
 class FocalLoss(nn.Module):
     def __init__(self, gamma: float, alpha: float) -> None:
         super(FocalLoss, self).__init__()
@@ -9,10 +10,11 @@ class FocalLoss(nn.Module):
         self.alpha = alpha
 
     def forward(self, inputs: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
-        ce_loss = F.cross_entropy(inputs, targets, reduction='none')
+        ce_loss = F.cross_entropy(inputs, targets, reduction="none")
         pt = torch.exp(-ce_loss)
         focal_loss = self.alpha * (1 - pt) ** self.gamma * ce_loss
         return focal_loss.mean()
+
 
 class DiceLoss(nn.Module):
     def __init__(self) -> None:
@@ -20,10 +22,16 @@ class DiceLoss(nn.Module):
         self.smooth = 1.0
 
     def forward(self, inputs: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
+        if targets.dim() == 1 and inputs.size(1) > 1:
+            targets = F.one_hot(targets, num_classes=inputs.size(1)).float()
+
         inputs = torch.sigmoid(inputs)
         intersection = (inputs * targets).sum()
-        dice = (2. * intersection + self.smooth) / (inputs.sum() + targets.sum() + self.smooth)
+        dice = (2.0 * intersection + self.smooth) / (
+            inputs.sum() + targets.sum() + self.smooth
+        )
         return 1 - dice
+
 
 class TverskyLoss(nn.Module):
     def __init__(self, alpha: float, beta: float) -> None:
@@ -33,13 +41,19 @@ class TverskyLoss(nn.Module):
         self.smooth = 1.0
 
     def forward(self, inputs: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
+        if targets.dim() == 1 and inputs.size(1) > 1:
+            targets = F.one_hot(targets, num_classes=inputs.size(1)).float()
+
         inputs = torch.sigmoid(inputs)
         true_pos = (inputs * targets).sum()
         false_neg = ((1 - inputs) * targets).sum()
         false_pos = (inputs * (1 - targets)).sum()
 
-        tversky = (true_pos + self.smooth) / (true_pos + self.alpha * false_neg + self.beta * false_pos + self.smooth)
+        tversky = (true_pos + self.smooth) / (
+            true_pos + self.alpha * false_neg + self.beta * false_pos + self.smooth
+        )
         return 1 - tversky
+
 
 class CombinedLoss(nn.Module):
     def __init__(self, gamma: float, alpha: float, use_tversky: bool) -> None:

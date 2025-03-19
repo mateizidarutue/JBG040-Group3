@@ -42,7 +42,7 @@ class CNN(BaseModel):
             )
             block.append(conv)
 
-            if self.params["use_batch_norm"]:
+            if i < len(self.params["conv_layers"]) - 1:
                 block.append(nn.BatchNorm2d(out_channels))
             if self.params["use_group_norm"]:
                 num_groups = min(4, out_channels) if out_channels % 4 == 0 else 1
@@ -60,8 +60,7 @@ class CNN(BaseModel):
             if dropout_enabled and dropout_position == "after_activation":
                 block.append(nn.Dropout2d(p=dropout_rate))
 
-            if i % 2 == 0:
-                layers.append(nn.MaxPool2d(kernel_size=2, stride=2))
+            layers.append(nn.MaxPool2d(kernel_size=2, stride=2))
 
             layers.extend(block)
             in_channels = out_channels
@@ -90,6 +89,7 @@ class CNN(BaseModel):
             in_features = out_features
 
         layers.append(nn.Linear(in_features, self.num_classes))
+
         return nn.Sequential(*layers)
 
     def initialize_weights(self) -> None:

@@ -3,6 +3,7 @@ import torch
 from typing import Tuple
 from pathlib import Path
 from torch.utils.data import Dataset
+from torch import Tensor
 
 
 class ImageDataset(Dataset):
@@ -13,7 +14,7 @@ class ImageDataset(Dataset):
     def __len__(self) -> int:
         return len(self.targets)
 
-    def __getitem__(self, idx: int) -> Tuple[torch.Tensor, np.ndarray]:
+    def __getitem__(self, idx: int) -> Tuple[Tensor, Tensor]:
         image = torch.from_numpy(self.imgs[idx] / 255).float() * 2 - 1
-        label = self.targets[idx]
+        label = torch.tensor(self.targets[idx], dtype=torch.long)
         return image, label
