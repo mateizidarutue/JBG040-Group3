@@ -30,7 +30,6 @@ class ParamSampler:
         train = config["training"]
         params.update(
             {
-                "shuffle": random.choice(train["shuffle"]),
                 "gradient_clipping": random.uniform(
                     train["gradient_clipping"]["min"], train["gradient_clipping"]["max"]
                 ),
@@ -171,7 +170,6 @@ class ParamSampler:
         train = config["training"]
         params.update(
             {
-                "shuffle": trial.suggest_categorical("shuffle", train["shuffle"]),
                 "gradient_clipping": trial.suggest_float(
                     "gradient_clipping",
                     train["gradient_clipping"]["min"],

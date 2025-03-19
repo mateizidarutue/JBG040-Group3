@@ -1,5 +1,5 @@
 import optuna
-from typing import Dict, List
+from typing import Dict, List, Any
 import yaml
 import json
 from param_sampler import ParamSampler
@@ -15,16 +15,14 @@ class OptunaBayesHyperband:
         trials_per_batch: int,
         number_of_runs: int,
         training_fn,
-        config_path: str,
+        config: Dict[str, Any],
         study_name: str = "hyperparameter_search",
         direction: str = "minimize",
     ):
-        self.study_name = study_name
-        self.config = self._load_config(config_path)
+        self.config = config
         self.trials_per_batch = trials_per_batch
         self.number_of_runs = number_of_runs
         self.training_fn = training_fn
-        self.direction = direction
 
         self.trial_histories: Dict[int, Dict[str, List[float]]] = {}
 
@@ -33,8 +31,8 @@ class OptunaBayesHyperband:
         )
         self.sampler = optuna.samplers.TPESampler()
         self.study = optuna.create_study(
-            study_name=self.study_name,
-            direction=self.direction,
+            study_name=study_name,
+            direction=direction,
             sampler=self.sampler,
             pruner=self.pruner,
         )

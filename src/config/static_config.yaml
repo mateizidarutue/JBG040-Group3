@@ -1,0 +1,12 @@
+min_budget: 1
+max_budget: 50
+eta: 2
+trials_per_search: 10
+searches_number: 5
+batch_size: 256
+direction: "minimize"
+num_classes: 6
+train_data: "data/X_train.npy"
+train_labels: "data/Y_train.npy"
+test_data: "data/X_test.npy"
+test_labels: "data/Y_test.npy"

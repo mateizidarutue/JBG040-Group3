@@ -18,7 +18,6 @@ architecture:
   activation_fc: ["relu", "tanh", "prelu", "gelu", "swish"]
 
 training:
-  shuffle: [true, false]
   gradient_clipping:
     min: 0.1
     max: 10.0
@@ -102,16 +101,3 @@ augmentation:
     min: 1.0
     max: 2.0
     mode: ["cubic", "bilinear", "nearest"]
-
-static:
-  min_budget: 10
-  max_budget: 100
-  eta: 2
-  trials_per_batch: 10
-  number_of_runs: 10
-  direction: "minimize"
-  num_classes: 6
-  train_data: "data/X_train.npy"
-  train_labels: "data/Y_train.npy"
-  test_data: "data/X_test.npy"
-  test_labels: "data/Y_test.npy"
