@@ -5,11 +5,11 @@ from typing import Dict, Any
 class SchedulerFactory:
     @staticmethod
     def get_scheduler(
-        optimizer: optim.Optimizer, config: Dict[str, Any]
+        optimizer: optim.Optimizer, params: Dict[str, Any]
     ) -> optim.lr_scheduler._LRScheduler:
-        scheduler_type = config["scheduler"]
-        decay_factor = config["decay_factor"]
-        step_size = config["step_size"]
+        scheduler_type = params["scheduler"]
+        decay_factor = params["lr_decay_factor"]
+        step_size = params["step_size"]
 
         if scheduler_type == "step":
             return optim.lr_scheduler.StepLR(
@@ -18,7 +18,7 @@ class SchedulerFactory:
 
         elif scheduler_type == "reduce_on_plateau":
             return optim.lr_scheduler.ReduceLROnPlateau(
-                optimizer, mode="min", factor=decay_factor, patience=5, verbose=True
+                optimizer, mode="min", factor=decay_factor, patience=5
             )
 
         elif scheduler_type == "cosine":

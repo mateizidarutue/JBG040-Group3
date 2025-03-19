@@ -1,8 +1,8 @@
 architecture:
   conv_layers:
-    - [32, 64, 128]
-    - [64, 128, 256]
-  kernel_size: [3, 5]
+    - [32, 64, 128, 256]
+    - [64, 128, 256, 512]
+  kernel_size: [3, 4]
   stride: [1, 2]
   padding: [0, 1]
   use_batch_norm: [true, false]
@@ -11,7 +11,6 @@ architecture:
   use_min_max_scaling: [true, false]
   activation_conv: ["relu", "leaky_relu", "prelu", "gelu", "swish"]
   weight_initialization: ["xavier", "kaiming", "normal", "uniform"]
-  freeze_layers: [true, false]
   fully_connected_layers:
     - [256, 128]
     - [512, 256, 128]
@@ -19,11 +18,9 @@ architecture:
 
 training:
   gradient_clipping:
-    min: 0.1
-    max: 10.0
-  early_stopping:
     enabled: [true, false]
-    patience: [5, 10, 15]
+    min: 0.1
+    max: 3.0
 
   optimizer:
     type: ["adam", "sgd", "rmsprop"]
@@ -86,18 +83,10 @@ augmentation:
     enabled: [true, false]
     min: 0
     max: 0.5
-  flip:
+  rotation:
     enabled: [true, false]
-    prob:
-      min: 0
-      max: 1.0
   crop:
     enabled: [true, false]
     size:
-      min: 50
-      max: 100
-  upscale:
-    enabled: [true, false]
-    min: 1.0
-    max: 2.0
-    mode: ["cubic", "bilinear", "nearest"]
+      min: 100
+      max: 128

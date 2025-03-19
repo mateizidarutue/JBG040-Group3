@@ -14,6 +14,6 @@ class ImageDataset(Dataset):
         return len(self.targets)
 
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, np.ndarray]:
-        image = torch.from_numpy(self.imgs[idx] / 255).float()
+        image = torch.from_numpy(self.imgs[idx] / 255).float() * 2 - 1
         label = self.targets[idx]
         return image, label

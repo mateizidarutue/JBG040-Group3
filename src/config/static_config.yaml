@@ -4,6 +4,7 @@ eta: 2
 trials_per_search: 10
 searches_number: 5
 batch_size: 256
+input_size: 128
 direction: "minimize"
 num_classes: 6
 train_data: "data/X_train.npy"

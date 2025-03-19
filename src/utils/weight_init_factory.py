@@ -6,10 +6,11 @@ class WeightInitFactory:
     @staticmethod
     def get_initializer(method: str) -> Callable[[nn.Module], None]:
         def init_fn(module: nn.Module):
-            _init_weight(module, method)
+            WeightInitFactory._init_weight(module, method)
 
         return init_fn
 
+    @staticmethod
     def _init_weight(module: nn.Module, init_method: str):
         if isinstance(module, (nn.Conv2d, nn.Linear)):
             if init_method == "xavier":

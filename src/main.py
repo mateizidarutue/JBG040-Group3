@@ -30,8 +30,9 @@ def setup_dataloaders(
     )
 
     class_counts = torch.bincount(
-        torch.tensor(full_train_dataset.targets[train_dataset.indices])
+        torch.LongTensor(full_train_dataset.targets[train_dataset.indices])
     )
+
     class_weights = 1.0 / class_counts.float()
     sample_weights = class_weights[full_train_dataset.targets[train_dataset.indices]]
 
@@ -45,7 +46,7 @@ def setup_dataloaders(
         train_dataset,
         batch_size=batch_size,
         sampler=sampler,
-        shuffle=True,
+        shuffle=False,
         num_workers=num_workers,
     )
     val_loader = DataLoader(
@@ -75,19 +76,22 @@ def main():
     )
 
     trainer = Trainer(
-        config=static_config,
         train_loader=train_loader,
         val_loader=val_loader,
         device=device,
+        input_size=static_config["input_size"],
+        num_classes=static_config["num_classes"],
     )
 
     search = OptunaBayesHyperband(
         min_budget=static_config["min_budget"],
-        max_budget=static_config["max_epochs"],
+        max_budget=static_config["max_budget"],
         eta=static_config["eta"],
-        trials_per_batch=static_config["trials_per_batch"],
-        number_of_runs=static_config["number_of_runs"],
-        training_fn=trainer.train,
+        trials_per_search=static_config["trials_per_search"],
+        searches_number=static_config["searches_number"],
+        num_classes=static_config["num_classes"],
+        trainer=trainer,
+        test_loader=test_loader,
         config=search_config,
         study_name="cnn_hyperparameter_search",
         direction=static_config["direction"],

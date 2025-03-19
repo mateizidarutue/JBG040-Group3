@@ -1,14 +1,14 @@
-from utils.losses import FocalLoss, DiceLoss, TverskyLoss, CombinedLoss
+from src.utils.losses import FocalLoss, DiceLoss, TverskyLoss, CombinedLoss
 from typing import Dict, Any
 import torch.nn as nn
 
 
 class LossFactory:
     @staticmethod
-    def get_loss(config: Dict[str, Any]) -> nn.Module:
-        loss_type = config["loss_function"]["type"]
-        gamma = config["loss_function"]["gamma"]
-        alpha = config["loss_function"]["alpha"]
+    def get_loss(params: Dict[str, Any]) -> nn.Module:
+        loss_type = params["loss_type"]
+        gamma = params["loss_gamma"]
+        alpha = params["loss_alpha"]
 
         if loss_type == "cross_entropy":
             return nn.CrossEntropyLoss()

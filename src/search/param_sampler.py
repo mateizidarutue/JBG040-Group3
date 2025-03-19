@@ -21,7 +21,6 @@ class ParamSampler:
                 "use_min_max_scaling": random.choice(arch["use_min_max_scaling"]),
                 "activation_conv": random.choice(arch["activation_conv"]),
                 "weight_initialization": random.choice(arch["weight_initialization"]),
-                "freeze_layers": random.choice(arch["freeze_layers"]),
                 "fully_connected_layers": random.choice(arch["fully_connected_layers"]),
                 "activation_fc": random.choice(arch["activation_fc"]),
             }
@@ -30,14 +29,11 @@ class ParamSampler:
         train = config["training"]
         params.update(
             {
+                "gradient_clipping_enabled": random.choice(
+                    train["gradient_clipping"]["enabled"]
+                ),
                 "gradient_clipping": random.uniform(
                     train["gradient_clipping"]["min"], train["gradient_clipping"]["max"]
-                ),
-                "early_stopping_enabled": random.choice(
-                    train["early_stopping"]["enabled"]
-                ),
-                "early_stopping_patience": random.choice(
-                    train["early_stopping"]["patience"]
                 ),
             }
         )
@@ -71,54 +67,60 @@ class ParamSampler:
             }
         )
 
-        loss = train["loss"]
-        params["loss"] = {
-            "type": random.choice(loss["types"]),
-            "gamma": random.uniform(loss["gamma"]["min"], loss["gamma"]["max"]),
-            "alpha": random.uniform(loss["alpha"]["min"], loss["alpha"]["max"]),
-        }
+        loss = train["loss_function"]
+        params.update(
+            {
+                "loss_type": random.choice(loss["type"]),
+                "loss_gamma": random.uniform(
+                    loss["gamma"]["min"], loss["gamma"]["max"]
+                ),
+                "loss_alpha": random.uniform(
+                    loss["alpha"]["min"], loss["alpha"]["max"]
+                ),
+            }
+        )
 
         reg = config["regularization"]
-        params["regularization"] = {
-            "l1_enabled": random.choice(reg["l1"]["enabled"]),
-            "l1_strength": random.uniform(
-                reg["l1"]["strength"]["min"], reg["l1"]["strength"]["max"]
-            ),
-            "l2_enabled": random.choice(reg["l2"]["enabled"]),
-            "l2_strength": random.uniform(
-                reg["l2"]["strength"]["min"], reg["l2"]["strength"]["max"]
-            ),
-            "dropout_enabled": random.choice(reg["dropout"]["enabled"]),
-            "dropout_rate": random.uniform(
-                reg["dropout"]["rate"]["min"], reg["dropout"]["rate"]["max"]
-            ),
-            "dropout_position": random.choice(reg["dropout"]["position"]),
-            "dropconnect_enabled": random.choice(reg["dropconnect"]["enabled"]),
-            "dropconnect_rate": random.uniform(
-                reg["dropconnect"]["rate"]["min"], reg["dropconnect"]["rate"]["max"]
-            ),
-        }
+        params.update(
+            {
+                "l1_enabled": random.choice(reg["l1"]["enabled"]),
+                "l1_strength": random.uniform(
+                    reg["l1"]["strength"]["min"], reg["l1"]["strength"]["max"]
+                ),
+                "l2_enabled": random.choice(reg["l2"]["enabled"]),
+                "l2_strength": random.uniform(
+                    reg["l2"]["strength"]["min"], reg["l2"]["strength"]["max"]
+                ),
+                "dropout_enabled": random.choice(reg["dropout"]["enabled"]),
+                "dropout_rate": random.uniform(
+                    reg["dropout"]["rate"]["min"], reg["dropout"]["rate"]["max"]
+                ),
+                "dropout_position": random.choice(reg["dropout"]["position"]),
+                "dropconnect_enabled": random.choice(reg["dropconnect"]["enabled"]),
+                "dropconnect_rate": random.uniform(
+                    reg["dropconnect"]["rate"]["min"], reg["dropconnect"]["rate"]["max"]
+                ),
+            }
+        )
 
         aug = config["augmentation"]
-        params["augmentation"] = {
-            "brightness_enabled": random.choice(aug["brightness"]["enabled"]),
-            "brightness": random.uniform(
-                aug["brightness"]["min"], aug["brightness"]["max"]
-            ),
-            "contrast_enabled": random.choice(aug["contrast"]["enabled"]),
-            "contrast": random.uniform(aug["contrast"]["min"], aug["contrast"]["max"]),
-            "flip_enabled": random.choice(aug["flip"]["enabled"]),
-            "flip_prob": random.uniform(
-                aug["flip"]["prob"]["min"], aug["flip"]["prob"]["max"]
-            ),
-            "crop_enabled": random.choice(aug["crop"]["enabled"]),
-            "crop_size": random.randint(
-                aug["crop"]["size"]["min"], aug["crop"]["size"]["max"]
-            ),
-            "upscale_enabled": random.choice(aug["upscale"]["enabled"]),
-            "upscale": random.uniform(aug["upscale"]["min"], aug["upscale"]["max"]),
-            "upscale_mode": random.choice(aug["upscale"]["mode"]),
-        }
+        params.update(
+            {
+                "brightness_enabled": random.choice(aug["brightness"]["enabled"]),
+                "brightness": random.uniform(
+                    aug["brightness"]["min"], aug["brightness"]["max"]
+                ),
+                "contrast_enabled": random.choice(aug["contrast"]["enabled"]),
+                "contrast": random.uniform(
+                    aug["contrast"]["min"], aug["contrast"]["max"]
+                ),
+                "rotation_enabled": random.choice(aug["rotation"]["enabled"]),
+                "crop_enabled": random.choice(aug["crop"]["enabled"]),
+                "crop_size": random.randint(
+                    aug["crop"]["size"]["min"], aug["crop"]["size"]["max"]
+                ),
+            }
+        )
 
         return params
 
@@ -155,9 +157,6 @@ class ParamSampler:
                 "weight_initialization": trial.suggest_categorical(
                     "weight_initialization", arch["weight_initialization"]
                 ),
-                "freeze_layers": trial.suggest_categorical(
-                    "freeze_layers", arch["freeze_layers"]
-                ),
                 "fully_connected_layers": trial.suggest_categorical(
                     "fully_connected_layers", arch["fully_connected_layers"]
                 ),
@@ -170,16 +169,14 @@ class ParamSampler:
         train = config["training"]
         params.update(
             {
+                "gradient_clipping_enabled": trial.suggest_categorical(
+                    "gradient_clipping_enabled", train["gradient_clipping"]["enabled"]
+                ),
                 "gradient_clipping": trial.suggest_float(
                     "gradient_clipping",
                     train["gradient_clipping"]["min"],
                     train["gradient_clipping"]["max"],
-                ),
-                "early_stopping_enabled": trial.suggest_categorical(
-                    "early_stopping_enabled", train["early_stopping"]["enabled"]
-                ),
-                "early_stopping_patience": trial.suggest_categorical(
-                    "early_stopping_patience", train["early_stopping"]["patience"]
+                    log=True,
                 ),
             }
         )
@@ -224,14 +221,14 @@ class ParamSampler:
             }
         )
 
-        loss = train["loss"]
+        loss = train["loss_function"]
         params.update(
             {
-                "type": trial.suggest_categorical("loss_type", loss["types"]),
-                "gamma": trial.suggest_float(
+                "loss_type": trial.suggest_categorical("loss_type", loss["type"]),
+                "loss_gamma": trial.suggest_float(
                     "loss_gamma", loss["gamma"]["min"], loss["gamma"]["max"]
                 ),
-                "alpha": trial.suggest_float(
+                "loss_alpha": trial.suggest_float(
                     "loss_alpha", loss["alpha"]["min"], loss["alpha"]["max"]
                 ),
             }
@@ -298,26 +295,14 @@ class ParamSampler:
                 "contrast": trial.suggest_float(
                     "contrast", aug["contrast"]["min"], aug["contrast"]["max"]
                 ),
-                "flip_enabled": trial.suggest_categorical(
-                    "flip_enabled", aug["flip"]["enabled"]
-                ),
-                "flip_prob": trial.suggest_float(
-                    "flip_prob", aug["flip"]["prob"]["min"], aug["flip"]["prob"]["max"]
+                "rotation_enabled": trial.suggest_categorical(
+                    "rotation_enabled", aug["rotation"]["enabled"]
                 ),
                 "crop_enabled": trial.suggest_categorical(
                     "crop_enabled", aug["crop"]["enabled"]
                 ),
                 "crop_size": trial.suggest_int(
                     "crop_size", aug["crop"]["size"]["min"], aug["crop"]["size"]["max"]
-                ),
-                "upscale_enabled": trial.suggest_categorical(
-                    "upscale_enabled", aug["upscale"]["enabled"]
-                ),
-                "upscale": trial.suggest_float(
-                    "upscale", aug["upscale"]["min"], aug["upscale"]["max"]
-                ),
-                "upscale_mode": trial.suggest_categorical(
-                    "upscale_mode", aug["upscale"]["mode"]
                 ),
             }
         )

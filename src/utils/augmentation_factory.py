@@ -4,43 +4,32 @@ from typing import Dict, Any
 
 class AugmentationFactory:
     @staticmethod
-    def get_augmentations(config: Dict[str, Any]) -> transforms.Compose:
+    def get_augmentations(
+        config: Dict[str, Any], input_size: int
+    ) -> transforms.Compose:
         augmentations = []
 
-        if config["use_flip"]:
-            flip_prob = config["flip_prob"]
-            augmentations.append(transforms.RandomHorizontalFlip(p=flip_prob))
+        if config["rotation_enabled"]:
+            augmentations.append(transforms.RandomRotation(degrees=(-5, 5)))
 
-        if config["use_crop"]:
+        if config["crop_enabled"]:
             crop_size = config["crop_size"]
-            augmentations.append(transforms.RandomResizedCrop(size=crop_size))
-
-        if config["use_brightness"] or config["use_contrast"]:
-            brightness = config["brightness"] if config["use_brightness"] else 0
-            contrast = config["contrast"] if config["use_contrast"] else 0
             augmentations.append(
-                transforms.ColorJitter(brightness=brightness, contrast=contrast)
-            )
-
-        if config["use_upscale"]:
-            upscale = config["upscale"]
-            upscale_mode = config["upscale_mode"]
-            augmentations.append(
-                transforms.Resize(
-                    size=(int(upscale * 100), int(upscale * 100)),
-                    interpolation=AugmentationFactory.get_interpolation(upscale_mode),
+                transforms.RandomApply(
+                    [transforms.RandomResizedCrop(size=crop_size)], p=0.3
                 )
             )
 
-        return transforms.Compose(augmentations)
+        if config["brightness_enabled"] or config["contrast_enabled"]:
+            brightness = config["brightness"] if config["brightness_enabled"] else 0
+            contrast = config["contrast"] if config["contrast_enabled"] else 0
+            augmentations.append(
+                transforms.RandomApply(
+                    [transforms.ColorJitter(brightness=brightness, contrast=contrast)],
+                    p=0.4,
+                )
+            )
 
-    @staticmethod
-    def get_interpolation(mode):
-        if mode == "bilinear":
-            return transforms.InterpolationMode.BILINEAR
-        elif mode == "nearest":
-            return transforms.InterpolationMode.NEAREST
-        elif mode == "cubic":
-            return transforms.InterpolationMode.BICUBIC
-        else:
-            raise ValueError(f"Unsupported interpolation mode: {mode}")
+        augmentations.append(transforms.Resize(input_size))
+
+        return transforms.Compose(augmentations)
