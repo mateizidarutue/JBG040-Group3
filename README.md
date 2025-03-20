@@ -19,12 +19,14 @@ This project implements hyperparameter optimization for CNN models using Tree-st
 ## Setup
 
 1. Create and activate a Python virtual environment:
+
 ```bash
 python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+.\.venv\Scripts\activate
 ```
 
 2. Install dependencies:
+
 ```bash
 pip install -r requirements.txt
 ```
@@ -42,32 +44,40 @@ pip install -r requirements.txt
 ## Usage
 
 ### Single Model Training
+
 To train a single model with predefined configuration:
+
 ```bash
 python -m src.train_with_config
 ```
-This uses `model_config.json` and saves results to `model_output/`.
+
+This uses `src/config/model_config.json` and saves results to `model_output/`.
 
 ### Hyperparameter Optimization
+
 Two options are available:
 
 1. Direct execution:
+
 ```bash
 python -m src.main
 ```
 
 2. Parallel processing using batch script:
+
 ```bash
 run_scripts.bat <num_parallel_processes>
 ```
 
 Models will be saved to:
+
 - `pruned_models/`: Trials terminated by Hyperband
 - `completed_models/`: Successfully completed trials
 
 ## Configuration
 
 - `search_config.yaml`: Defines hyperparameter search space including:
+
   - Architecture parameters (conv layers, kernel sizes, normalizations)
   - Training parameters (epochs, learning rates, momentum)
   - Augmentation settings
@@ -79,6 +89,7 @@ Models will be saved to:
 ## Parallel Processing
 
 For distributed optimization:
+
 1. Ensure MySQL is running locally
 2. Configure storage connection in `.env`
 3. Use `run_scripts.bat` with desired parallel process count
