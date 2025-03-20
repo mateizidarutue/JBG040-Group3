@@ -1,9 +1,8 @@
-from optuna.pruners import HyperbandPruner
 import optuna
 import torch
 from torch.utils.data import DataLoader
 import numpy as np
-from typing import Dict, Any, List
+from typing import Dict, Any, Tuple, Optional
 from src.models.cnn import CNN
 from src.utils.loss_factory import LossFactory
 from src.utils.optimizer_factory import OptimizerFactory
@@ -13,6 +12,7 @@ from src.utils.metrics_calculator import MetricsCalculator
 from optuna import Trial
 from torch import Tensor
 from tqdm.auto import tqdm
+import os
 
 
 class Trainer:
@@ -20,32 +20,32 @@ class Trainer:
         self,
         train_loader: DataLoader,
         val_loader: DataLoader,
+        test_loader: DataLoader,
         device: str,
         input_size: int,
         num_classes: int,
-    ):
+    ) -> None:
         self.train_loader = train_loader
         self.val_loader = val_loader
+        self.test_loader = test_loader
         self.device = device
         self.metrics_calculator = MetricsCalculator()
         self.input_size = input_size
         self.num_classes = num_classes
-        self.trial_histories: List[Dict[str, float]] = []
 
-    def train(self, trial: Trial, params: Dict[str, Any]):
+    def train(
+        self, trial: Trial, params: Dict[str, Any], num_epochs: int
+    ) -> Tuple[float, CNN]:
         model = CNN(params, self.num_classes, self.input_size).to(self.device)
-        loss_fn = LossFactory.get_loss(params).to(self.device)
+        loss_fn = LossFactory.get_loss(params, self.num_classes).to(self.device)
         optimizer = OptimizerFactory.get_optimizer(model, params)
         scheduler = SchedulerFactory.get_scheduler(optimizer, params)
         augmentation = AugmentationFactory.get_augmentations(params, self.input_size)
 
-        pruner: HyperbandPruner = trial.study.pruner
-        max_epochs = pruner._max_resource
-
         model.train()
 
         epoch_pbar = tqdm(
-            range(1, max_epochs + 1), desc=f"Trial {trial.number} Epochs", leave=True
+            range(1, num_epochs + 1), desc=f"Trial {trial.number} Epochs", leave=True
         )
         for epoch in epoch_pbar:
             epoch_losses = []
@@ -60,6 +60,7 @@ class Trainer:
                 outputs: Tensor = model(images)
                 loss: Tensor = loss_fn(outputs, labels)
                 loss.backward()
+
                 if params["gradient_clipping_enabled"]:
                     torch.nn.utils.clip_grad_norm_(
                         model.parameters(), params["gradient_clipping"]
@@ -76,17 +77,17 @@ class Trainer:
                 {"train_loss": f"{avg_loss:.4f}", "val_loss": f"{val_loss:.4f}"}
             )
 
-            self.trial_histories.append(
-                {
-                    "epoch": epoch,
-                    "train_loss": avg_loss,
-                    "val_loss": val_loss,
-                }
-            )
-
-            trial.report(avg_loss, step=epoch)
+            trial.report(val_loss, step=epoch)
 
             if trial.should_prune():
+                test_loss, metrics = self.test(model, self.test_loader, params, True)
+
+                trial.set_user_attr("test_loss", test_loss)
+                trial.set_user_attr("metrics", metrics)
+
+                model_path = f"pruned_models/model_trial_{trial.number}.pt"
+                os.makedirs(os.path.dirname(model_path), exist_ok=True)
+                torch.save(model.state_dict(), model_path)
                 raise optuna.exceptions.TrialPruned()
 
             if isinstance(scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
@@ -94,11 +95,11 @@ class Trainer:
             else:
                 scheduler.step()
 
-        return val_loss, self.trial_histories, model
+        return val_loss, model
 
-    def train_model(self, params: Dict[str, Any], num_epochs: int):
+    def train_model(self, params: Dict[str, Any], num_epochs: int) -> Tuple[float, CNN]:
         model = CNN(params, self.num_classes, self.input_size).to(self.device)
-        loss_fn = LossFactory.get_loss(params).to(self.device)
+        loss_fn = LossFactory.get_loss(params, self.num_classes).to(self.device)
         optimizer = OptimizerFactory.get_optimizer(model, params)
         scheduler = SchedulerFactory.get_scheduler(optimizer, params)
         augmentation = AugmentationFactory.get_augmentations(params, self.input_size)
@@ -156,8 +157,8 @@ class Trainer:
         model: CNN,
         data_loader: DataLoader,
         params: Dict[str, Any],
-        metrics: bool,
-    ):
+        calculate_metrics: bool,
+    ) -> Tuple[float, Optional[Dict[str, float]]]:
         model.eval()
         total_loss = []
         all_outputs = []
@@ -168,7 +169,9 @@ class Trainer:
                 images: Tensor = images.to(self.device)
                 labels: Tensor = labels.to(self.device)
                 outputs: Tensor = model(images)
-                loss: Tensor = LossFactory.get_loss(params)(outputs, labels)
+                loss: Tensor = LossFactory.get_loss(params, self.num_classes)(
+                    outputs, labels
+                ).to(self.device)
                 total_loss.append(loss.item())
 
                 all_outputs.append(outputs)
@@ -176,7 +179,7 @@ class Trainer:
 
         avg_loss = np.mean(total_loss)
 
-        if metrics:
+        if calculate_metrics:
             all_outputs = torch.cat(all_outputs).detach().cpu()
             all_labels = torch.cat(all_labels).detach().cpu()
             metrics = self.metrics_calculator.compute(all_outputs, all_labels)

@@ -42,12 +42,21 @@ class CNN(BaseModel):
             )
             block.append(conv)
 
-            if i < len(self.params["conv_layers"]) - 1:
+            if (
+                i < len(self.params["conv_layers"]) - 1
+                and self.params["use_batch_norm"]
+            ):
                 block.append(nn.BatchNorm2d(out_channels))
-            if self.params["use_group_norm"]:
+            if (
+                i < len(self.params["conv_layers"]) - 1
+                and self.params["use_group_norm"]
+            ):
                 num_groups = min(4, out_channels) if out_channels % 4 == 0 else 1
                 block.append(nn.GroupNorm(num_groups, out_channels))
-            if self.params["use_instance_norm"]:
+            if (
+                i < len(self.params["conv_layers"]) - 1
+                and self.params["use_instance_norm"]
+            ):
                 block.append(nn.InstanceNorm2d(out_channels))
 
             if dropout_enabled and dropout_position == "after_conv":

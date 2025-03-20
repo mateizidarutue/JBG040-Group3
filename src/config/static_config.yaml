@@ -1,8 +1,7 @@
 min_budget: 1
-max_budget: 50
-eta: 2
-trials_per_search: 10
-searches_number: 5
+max_budget: 25
+eta: 3
+total_trials: 50
 batch_size: 256
 input_size: 128
 direction: "minimize"

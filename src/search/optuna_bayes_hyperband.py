@@ -1,11 +1,16 @@
 import optuna
 from typing import Dict, List, Any
+
+from optuna.study import MaxTrialsCallback
 from src.search.param_sampler import ParamSampler
 from torch.utils.data import DataLoader
 from src.trainer.trainer import Trainer
-from tqdm.auto import tqdm
 import torch
 import json
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 class OptunaBayesHyperband:
@@ -14,96 +19,63 @@ class OptunaBayesHyperband:
         min_budget: int,
         max_budget: int,
         eta: int,
-        trials_per_search: int,
-        searches_number: int,
+        total_trials: int,
         num_classes: int,
         trainer: Trainer,
         test_loader: DataLoader,
         config: Dict[str, Any],
         study_name: str = "hyperparameter_search",
         direction: str = "minimize",
+        storage_connection_string: str = os.getenv("STORAGE_CONNECTION_STRING"),
     ):
         self.config = config
-        self.trials_per_search = trials_per_search
-        self.searches_number = searches_number
+        self.total_trials = total_trials
         self.num_classes = num_classes
         self.trainer = trainer
         self.test_loader = test_loader
         self.save_result: List[Dict[str, float]] = []
+        self.num_epochs = max_budget
 
         self.pruner = optuna.pruners.HyperbandPruner(
             min_resource=min_budget, max_resource=max_budget, reduction_factor=eta
         )
-        self.sampler = optuna.samplers.TPESampler()
+        self.sampler = optuna.samplers.TPESampler(
+            multivariate=True,
+            group=True,
+            constant_liar=True,
+            n_startup_trials=10,
+        )
         self.study = optuna.create_study(
             study_name=study_name,
+            storage=storage_connection_string,
             direction=direction,
             sampler=self.sampler,
+            load_if_exists=True,
             pruner=self.pruner,
         )
 
     def objective(self, trial: optuna.Trial):
-        if trial.number < self.trials_per_search:
-            params = ParamSampler.sample_random_params(self.config)
-        else:
-            params = ParamSampler.suggest_params(trial, self.config)
+        params = ParamSampler.suggest_params(trial, self.config)
 
-        result, trial_histories, model = self.trainer.train(trial, params)
+        result, model = self.trainer.train(trial, params, self.num_epochs)
 
         test_loss, metrics = self.trainer.test(model, self.test_loader, params, True)
 
-        state = self.study.trials[trial.number].state
-
-        self.save_result.append(
-            {
-                "trial_number": trial.number,
-                "state": str(state),
-                "params": params,
-                "test_loss": test_loss,
-                "metrics": metrics,
-                "trial_history": trial_histories,
-            }
-        )
+        trial.set_user_attr("test_loss", test_loss)
+        trial.set_user_attr("metrics", metrics)
 
         model_path = f"saved_models/model_trial_{trial.number}.pt"
+        os.makedirs(os.path.dirname(model_path), exist_ok=True)
         torch.save(model.state_dict(), model_path)
 
         return result
 
     def run(self):
-        total_trials = self.trials_per_search * self.searches_number
-        print(f"Starting optimization with {total_trials} total trials...")
-
-        batch_pbar = tqdm(
-            range(self.searches_number), desc="Search Batches", leave=True
+        print(f"Starting optimization with {self.total_trials} total trials...")
+        self.study.optimize(
+            self.objective,
+            callbacks=[MaxTrialsCallback(self.total_trials, states=None)],
         )
-        for batch in batch_pbar:
-            batch_pbar.set_postfix({"batch": f"{batch + 1}/{self.searches_number}"})
-            self._run_batch(self.trials_per_search)
 
         with open("results.json", "w") as f:
             json.dump(self.save_result, f, indent=4)
-
-    def _run_batch(self, batch_size: int):
-        print(f"\n=== Running Batch of Size {batch_size} ===")
-
-        trial_pbar = tqdm(range(batch_size), desc="Trials in Batch", leave=True)
-        for _ in trial_pbar:
-            trial = self.study.ask()
-
-            try:
-                result = self.objective(trial)
-                self.study.tell(trial, result)
-                trial_pbar.set_postfix(
-                    {
-                        "trial": trial.number,
-                        "value": f"{result:.4f}",
-                        "state": "completed",
-                    }
-                )
-            except optuna.exceptions.TrialPruned as e:
-                self.study.tell(trial, state=optuna.trial.TrialState.PRUNED)
-                trial_pbar.set_postfix({"trial": trial.number, "state": "pruned"})
-                print(f"Trial {trial.number} pruned: {e}")
-
-        print(f"\n=== Finished Batch of Size {batch_size} ===")

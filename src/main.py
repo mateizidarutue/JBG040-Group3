@@ -6,6 +6,9 @@ from src.trainer.trainer import Trainer
 from src.search.optuna_bayes_hyperband import OptunaBayesHyperband
 from src.dataset.image_dataset import ImageDataset
 import os
+import optuna
+import logging
+import sys
 
 
 def load_config(config_path: str):
@@ -47,13 +50,13 @@ def setup_dataloaders(
         batch_size=batch_size,
         sampler=sampler,
         shuffle=False,
-        num_workers=num_workers,
+        num_workers=0,
     )
     val_loader = DataLoader(
-        val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers
+        val_dataset, batch_size=batch_size, shuffle=False, num_workers=0
     )
     test_loader = DataLoader(
-        test_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers
+        test_dataset, batch_size=batch_size, shuffle=False, num_workers=0
     )
 
     return train_loader, val_loader, test_loader
@@ -65,7 +68,10 @@ def main():
     search_config = load_config(search_config_path)
     static_config = load_config(static_config_path)
 
+    optuna.logging.set_verbosity(optuna.logging.INFO)
+    optuna.logging.get_logger("optuna").addHandler(logging.StreamHandler(sys.stdout))
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Using device: {device}")
 
     train_loader, val_loader, test_loader = setup_dataloaders(
         x_train_path=Path(static_config["train_data"]),
@@ -78,6 +84,7 @@ def main():
     trainer = Trainer(
         train_loader=train_loader,
         val_loader=val_loader,
+        test_loader=test_loader,
         device=device,
         input_size=static_config["input_size"],
         num_classes=static_config["num_classes"],
@@ -87,8 +94,7 @@ def main():
         min_budget=static_config["min_budget"],
         max_budget=static_config["max_budget"],
         eta=static_config["eta"],
-        trials_per_search=static_config["trials_per_search"],
-        searches_number=static_config["searches_number"],
+        total_trials=static_config["total_trials"],
         num_classes=static_config["num_classes"],
         trainer=trainer,
         test_loader=test_loader,

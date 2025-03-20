@@ -1,25 +1,20 @@
 architecture:
-  conv_layers:
-    - [32, 64, 128, 256]
-    - [64, 128, 256, 512]
-  kernel_size: [3, 4]
+  conv_layers: ["32, 64, 128, 256", "64, 128, 256, 512"]
+  kernel_size: [3, 5]
   stride: [1, 2]
-  padding: [0, 1]
   use_batch_norm: [true, false]
   use_group_norm: [true, false]
   use_instance_norm: [true, false]
   use_min_max_scaling: [true, false]
   activation_conv: ["relu", "leaky_relu", "prelu", "gelu", "swish"]
   weight_initialization: ["xavier", "kaiming", "normal", "uniform"]
-  fully_connected_layers:
-    - [256, 128]
-    - [512, 256, 128]
+  fully_connected_layers: ["256, 128", "512, 256, 128"]
   activation_fc: ["relu", "tanh", "prelu", "gelu", "swish"]
 
 training:
   gradient_clipping:
     enabled: [true, false]
-    min: 0.1
+    min: 1.0
     max: 3.0
 
   optimizer:
@@ -65,11 +60,6 @@ regularization:
   dropout:
     enabled: [true, false]
     position: ["after_conv", "after_activation", "after_fc"]
-    rate:
-      min: 0.1
-      max: 0.5
-  dropconnect:
-    enabled: [true, false]
     rate:
       min: 0.1
       max: 0.5
