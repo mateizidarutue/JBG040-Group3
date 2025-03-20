@@ -4,6 +4,8 @@ from src.search.param_sampler import ParamSampler
 from torch.utils.data import DataLoader
 from src.trainer.trainer import Trainer
 from tqdm.auto import tqdm
+import torch
+import json
 
 
 class OptunaBayesHyperband:
@@ -59,19 +61,28 @@ class OptunaBayesHyperband:
                 "params": params,
                 "test_loss": test_loss,
                 "metrics": metrics,
-                "trial_histories": trial_histories,
+                "trial_history": trial_histories,
             }
         )
+
+        model_path = f"saved_models/model_trial_{trial.number}.pt"
+        torch.save(model.state_dict(), model_path)
+
         return result
 
     def run(self):
         total_trials = self.trials_per_search * self.searches_number
         print(f"Starting optimization with {total_trials} total trials...")
 
-        batch_pbar = tqdm(range(self.searches_number), desc="Search Batches", leave=True)
+        batch_pbar = tqdm(
+            range(self.searches_number), desc="Search Batches", leave=True
+        )
         for batch in batch_pbar:
             batch_pbar.set_postfix({"batch": f"{batch + 1}/{self.searches_number}"})
             self._run_batch(self.trials_per_search)
+
+        with open("results.json", "w") as f:
+            json.dump(self.save_result, f, indent=4)
 
     def _run_batch(self, batch_size: int):
         print(f"\n=== Running Batch of Size {batch_size} ===")
@@ -83,17 +94,16 @@ class OptunaBayesHyperband:
             try:
                 result = self.objective(trial)
                 self.study.tell(trial, result)
-                trial_pbar.set_postfix({
-                    "trial": trial.number,
-                    "value": f"{result:.4f}",
-                    "state": "completed"
-                })
+                trial_pbar.set_postfix(
+                    {
+                        "trial": trial.number,
+                        "value": f"{result:.4f}",
+                        "state": "completed",
+                    }
+                )
             except optuna.exceptions.TrialPruned as e:
                 self.study.tell(trial, state=optuna.trial.TrialState.PRUNED)
-                trial_pbar.set_postfix({
-                    "trial": trial.number,
-                    "state": "pruned"
-                })
+                trial_pbar.set_postfix({"trial": trial.number, "state": "pruned"})
                 print(f"Trial {trial.number} pruned: {e}")
 
         print(f"\n=== Finished Batch of Size {batch_size} ===")

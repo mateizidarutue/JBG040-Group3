@@ -44,7 +44,9 @@ class Trainer:
 
         model.train()
 
-        epoch_pbar = tqdm(range(1, max_epochs + 1), desc=f"Trial {trial.number} Epochs", leave=True)
+        epoch_pbar = tqdm(
+            range(1, max_epochs + 1), desc=f"Trial {trial.number} Epochs", leave=True
+        )
         for epoch in epoch_pbar:
             epoch_losses = []
 
@@ -70,10 +72,9 @@ class Trainer:
             avg_loss = np.mean(epoch_losses)
             val_loss, _ = self.test(model, self.val_loader, params, False)
 
-            epoch_pbar.set_postfix({
-                "train_loss": f"{avg_loss:.4f}",
-                "val_loss": f"{val_loss:.4f}"
-            })
+            epoch_pbar.set_postfix(
+                {"train_loss": f"{avg_loss:.4f}", "val_loss": f"{val_loss:.4f}"}
+            )
 
             self.trial_histories.append(
                 {
@@ -94,6 +95,61 @@ class Trainer:
                 scheduler.step()
 
         return val_loss, self.trial_histories, model
+
+    def train_model(self, params: Dict[str, Any], num_epochs: int):
+        model = CNN(params, self.num_classes, self.input_size).to(self.device)
+        loss_fn = LossFactory.get_loss(params).to(self.device)
+        optimizer = OptimizerFactory.get_optimizer(model, params)
+        scheduler = SchedulerFactory.get_scheduler(optimizer, params)
+        augmentation = AugmentationFactory.get_augmentations(params, self.input_size)
+
+        model.train()
+        history = []
+
+        epoch_pbar = tqdm(range(1, num_epochs + 1), desc="Training Epochs", leave=True)
+        for epoch in epoch_pbar:
+            epoch_losses = []
+
+            batch_pbar = tqdm(self.train_loader, desc=f"Epoch {epoch}", leave=False)
+            for images, labels in batch_pbar:
+                images: Tensor = images.to(self.device)
+                labels: Tensor = labels.to(self.device)
+                images = augmentation(images)
+                images = images.float()
+                optimizer.zero_grad()
+                outputs: Tensor = model(images)
+                loss: Tensor = loss_fn(outputs, labels)
+                loss.backward()
+                if params["gradient_clipping_enabled"]:
+                    torch.nn.utils.clip_grad_norm_(
+                        model.parameters(), params["gradient_clipping"]
+                    )
+                optimizer.step()
+                epoch_losses.append(loss.item())
+
+                batch_pbar.set_postfix({"loss": f"{loss.item():.4f}"})
+
+            avg_loss = np.mean(epoch_losses)
+            val_loss, _ = self.test(model, self.val_loader, params, False)
+
+            epoch_pbar.set_postfix(
+                {"train_loss": f"{avg_loss:.4f}", "val_loss": f"{val_loss:.4f}"}
+            )
+
+            history.append(
+                {
+                    "epoch": epoch,
+                    "train_loss": avg_loss,
+                    "val_loss": val_loss,
+                }
+            )
+
+            if isinstance(scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
+                scheduler.step(val_loss)
+            else:
+                scheduler.step()
+
+        return val_loss, history, model
 
     def test(
         self,
