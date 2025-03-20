@@ -33,7 +33,6 @@ class OptunaBayesHyperband:
         self.num_classes = num_classes
         self.trainer = trainer
         self.test_loader = test_loader
-        self.save_result: List[Dict[str, float]] = []
         self.num_epochs = max_budget
 
         self.pruner = optuna.pruners.HyperbandPruner(
@@ -64,7 +63,7 @@ class OptunaBayesHyperband:
         trial.set_user_attr("test_loss", test_loss)
         trial.set_user_attr("metrics", metrics)
 
-        model_path = f"saved_models/model_trial_{trial.number}.pt"
+        model_path = f"completed_models/model_trial_{trial.number}.pt"
         os.makedirs(os.path.dirname(model_path), exist_ok=True)
         torch.save(model.state_dict(), model_path)
 
@@ -76,6 +75,3 @@ class OptunaBayesHyperband:
             self.objective,
             callbacks=[MaxTrialsCallback(self.total_trials, states=None)],
         )
-
-        with open("results.json", "w") as f:
-            json.dump(self.save_result, f, indent=4)

@@ -21,13 +21,24 @@ This project implements hyperparameter optimization for CNN models using Tree-st
 1. Create and activate a Python virtual environment:
 
 ```bash
+# Create virtual environment
 python -m venv .venv
+
+# Activate virtual environment
+# For Windows:
 .\.venv\Scripts\activate
+# For Linux/Mac:
+source .venv/bin/activate
 ```
 
 2. Install dependencies:
 
 ```bash
+# For CPU-only
+pip install -r requirements.txt
+
+# For CUDA-enabled GPU (recommended)
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
 pip install -r requirements.txt
 ```
 
@@ -48,7 +59,7 @@ pip install -r requirements.txt
 To train a single model with predefined configuration:
 
 ```bash
-python -m src.train_with_config
+python -m train_with_config
 ```
 
 This uses `src/config/model_config.json` and saves results to `model_output/`.
@@ -63,7 +74,7 @@ Two options are available:
 python -m src.main
 ```
 
-2. Parallel processing using batch script:
+2. Parallel processing using batch script (Windows only):
 
 ```bash
 run_scripts.bat <num_parallel_processes>
@@ -83,8 +94,35 @@ Models will be saved to:
   - Augmentation settings
   - Loss function configurations
   - Regularization parameters
+  - And more
 
 - `model_config.json`: Configuration for single model training with fixed parameters
+
+  - Can contain multiple configurations to train sequentially
+  - Each configuration specifies a complete set of hyperparameters
+
+- `static_config.yaml`: Contains static configuration parameters:
+  - Training budget parameters:
+    ```yaml
+    min_budget: 1 # Minimum number of epochs for Hyperband
+    max_budget: 25 # Maximum number of epochs for training
+    eta: 3 # Reduction factor for Hyperband
+    total_trials: 50 # Total number of trials to run
+    ```
+  - Model parameters:
+    ```yaml
+    batch_size: 256 # Batch size for training
+    input_size: 128 # Input image size
+    num_classes: 6 # Number of output classes
+    direction: "minimize" # Optimization direction
+    ```
+  - Data paths:
+    ```yaml
+    train_data: "data/X_train.npy"
+    train_labels: "data/Y_train.npy"
+    test_data: "data/X_test.npy"
+    test_labels: "data/Y_test.npy"
+    ```
 
 ## Parallel Processing
 

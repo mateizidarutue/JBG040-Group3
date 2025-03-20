@@ -3,6 +3,7 @@ import yaml
 import torch
 from pathlib import Path
 from torch.utils.data import DataLoader, WeightedRandomSampler
+from src.models.cnn import CNN
 from src.trainer.trainer import Trainer
 from src.dataset.image_dataset import ImageDataset
 import os
@@ -52,6 +53,7 @@ def train_single_config(
     trainer = Trainer(
         train_loader=train_loader,
         val_loader=val_loader,
+        test_loader=None,
         device=str(device),
         input_size=static_config["input_size"],
         num_classes=static_config["num_classes"],
@@ -59,6 +61,7 @@ def train_single_config(
 
     print(f"\nStarting training for configuration {run_id}...")
     _, history, model = trainer.train_model(params, static_config["max_budget"])
+    model: CNN
     val_loss, metrics = trainer.test(model, trainer.val_loader, params, True)
 
     output_dir = Path(f"model_output/run_{run_id}")
