@@ -63,7 +63,7 @@ To train a single model with predefined configuration:
 python -m src.train_from_config
 ```
 
-This uses `src/config/model_config.json` and saves results to `completed/manual_{idx}`.
+This uses `src/config/model_config.json` and saves results to `saved_outputs/completed/manual_{idx}`.
 
 ### Hyperparameter Optimization
 
@@ -83,8 +83,8 @@ run_scripts.bat <num_parallel_processes>
 
 Models will be saved to:
 
-- `pruned/`: Trials terminated by Hyperband
-- `completed/`: Successfully completed trials
+- `saved_outputs/pruned/trial_{idx}`: Trials terminated by Hyperband
+- `saved_outputs/completed/trial_{idx}`: Successfully completed trials
 
 ## Configuration
 
