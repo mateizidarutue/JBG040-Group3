@@ -94,11 +94,11 @@ class Trainer:
 
                     ModelSaver.save_model(
                             model=model,
-                            trial=trial,
                             trial_type=TrialType.PRUNED,
                             params=params,
                             test_loss=test_loss,
                             metrics=metrics,
+                            trial=trial,
                         )
                     
                     raise optuna.exceptions.TrialPruned()
@@ -112,11 +112,11 @@ class Trainer:
 
         ModelSaver.save_model(
                 model=model,
-                trial=trial,
                 trial_type=TrialType.COMPLETED,
                 params=params,
                 test_loss=test_loss,
                 metrics=metrics,
+                trial=trial,
             )
 
         match return_type:

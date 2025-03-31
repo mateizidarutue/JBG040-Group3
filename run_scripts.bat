@@ -1,6 +1,10 @@
 @echo off
 setlocal enabledelayedexpansion
 
+:: === GET SCRIPT DIRECTORY ===
+set "BASEDIR=%~dp0"
+cd /d "%BASEDIR%"
+
 :: === LOAD ENV VARIABLES FROM .env FILE ===
 if exist .env (
     for /f "delims=" %%x in (.env) do set %%x
@@ -26,19 +30,16 @@ if "%~1"=="" (
     exit /b
 )
 
-:: === CHECK IF ARGUMENT IS PROVIDED ===
-if "%~1"=="" (
-    echo Please provide the number of times to run the script.
-    exit /b
-)
-
 set "runs=%~1"
+
+:: === PREPARE PYTHON COMMAND ===
+set "PYTHON_CMD=.venv\Scripts\activate && python -m src.main && pause"
 
 :: === ATTACH TO EXISTING TERMINAL OR OPEN A NEW ONE ===
 set "WT_COMMAND=wt -w 0 new-tab"
-wt -w 0 new-tab --title "Script 1" cmd /k "cd C:\Users\janpr\Desktop\JBG040-Group3 && .venv\Scripts\activate && python -m src.main && pause" || (
+%WT_COMMAND% --title "Script 1" cmd /k "cd /d %BASEDIR% && %PYTHON_CMD%" || (
     echo No running Windows Terminal found. Starting a new one...
-    start wt new-tab --title "Script 1" cmd /k "cd C:\Users\janpr\Desktop\JBG040-Group3 && .venv\Scripts\activate && python -m src.main && pause"
+    start wt new-tab --title "Script 1" cmd /k "cd /d %BASEDIR% && %PYTHON_CMD%"
 )
 
 :: Add a 5-second delay before starting the rest
@@ -50,7 +51,7 @@ set /a count=1
 if !count! lss %runs% (
     set /a count+=1
     echo Starting script !count!...
-    %WT_COMMAND% --title "Script !count!" cmd /k "cd C:\Users\janpr\Desktop\JBG040-Group3 && .venv\Scripts\activate && python -m src.main && pause"
+    %WT_COMMAND% --title "Script !count!" cmd /k "cd /d %BASEDIR% && %PYTHON_CMD%"
     timeout /t 5 /nobreak >nul
     goto loop
 )

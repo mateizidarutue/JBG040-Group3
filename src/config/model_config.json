@@ -96,7 +96,7 @@
     "optimizer": "rmsprop",
     "learning_rate": 0.001,
     "momentum": 0.8,
-    "weight_decay": 0.00005,
+    "weight_decay": 5e-05,
     "weight_decay_on_bias": false,
     "scheduler": "reduce_on_plateau",
     "lr_decay_factor": 0.6,

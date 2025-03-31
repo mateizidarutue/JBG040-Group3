@@ -54,6 +54,9 @@ class MetricsCalculator:
                     score += count * 0.5
                 elif true_class == no_finding_idx and pred_class != no_finding_idx:
                     score += count * 0.25
+        
+        max_score = total * 1.0
+        normalized_score = score / max_score if max_score else 0.0
 
         return EvaluationMetrics(
             accuracy=accuracy,
@@ -63,5 +66,5 @@ class MetricsCalculator:
             class_precision={i: precision[i] for i in range(num_classes)},
             class_recall={i: recall[i] for i in range(num_classes)},
             class_f1={i: f1[i] for i in range(num_classes)},
-            score=score,
+            score=normalized_score,
         )

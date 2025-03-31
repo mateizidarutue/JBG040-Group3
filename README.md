@@ -35,11 +35,12 @@ source .venv/bin/activate
 
 ```bash
 # For MPS / CPU-only
+pip install torch==2.6.0 torchvision==0.21.0
 pip install -r requirements.txt
 
-# For CUDA-enabled GPU (recommended)
+# For CUDA-enabled GPU
+pip install torch==2.5.1+cu121 torchvision==0.20.1+cu121 --index-url https://download.pytorch.org/whl/cu121
 pip install -r requirements.txt
-pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
 ```
 
 3. Create a `data` folder in the project root and place your dataset files there.
@@ -48,8 +49,8 @@ pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
    - Set up MySQL locally (user must have root access)
    - Create `.env` file with:
      ```
-     STORAGE_CONNECTION_STRING=your_optuna_storage_string
-     MYSQL_PASSWORD=your_mysql_password
+     STORAGE_CONNECTION_STRING=mysql+pymysql://root:<your_mysql_password>@localhost:3306/optuna_study
+     MYSQL_PASSWORD=<your_mysql_password>
      ```
 
 ## Usage
@@ -62,7 +63,7 @@ To train a single model with predefined configuration:
 python -m src.train_from_config
 ```
 
-This uses `src/config/model_config.json` and saves results to `model_output/`.
+This uses `src/config/model_config.json` and saves results to `completed/manual_{idx}`.
 
 ### Hyperparameter Optimization
 
@@ -82,8 +83,8 @@ run_scripts.bat <num_parallel_processes>
 
 Models will be saved to:
 
-- `pruned_models/`: Trials terminated by Hyperband
-- `completed_models/`: Successfully completed trials
+- `pruned/`: Trials terminated by Hyperband
+- `completed/`: Successfully completed trials
 
 ## Configuration
 
@@ -126,7 +127,7 @@ Models will be saved to:
 
 ## Parallel Processing
 
-For distributed optimization:
+For distributed optimization (works only on Windows):
 
 1. Ensure MySQL is running locally
 2. Configure storage connection in `.env`

@@ -9,6 +9,4 @@ __pycache__/
 .venv/
 .mypy_cache/
 .env
-model_output/
-pruned_models/
-saved_models/
+saved_outputs/
