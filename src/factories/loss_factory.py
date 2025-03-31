@@ -1,12 +1,13 @@
-from src.utils.losses import (
+from typing import Dict, Any
+import torch.nn as nn
+
+from src.factories.losses import (
     FocalLoss,
     DiceLoss,
     TverskyLoss,
     CombinedLoss,
     CrossEntropyLoss,
 )
-from typing import Dict, Any
-import torch.nn as nn
 
 
 class LossFactory:

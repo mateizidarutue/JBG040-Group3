@@ -1,28 +1,29 @@
+from pathlib import Path
 import torch
 import yaml
-from pathlib import Path
+
 from src.trainer.trainer import Trainer
 from src.search.optuna_bayes_hyperband import OptunaBayesHyperband
-import optuna
-import logging
-import sys
 from src.dataset.data_loader_manager import DataLoaderManager
 
 
-def load_config(config_path: str):
+def load_config(config_path: Path) -> dict:
     with open(config_path, "r") as f:
         return yaml.safe_load(f)
 
 
-def main():
-    search_config_path = "src/config/search_config.yaml"
-    static_config_path = "src/config/static_config.yaml"
+def main() -> None:
+    search_config_path = Path("src/config/search_config.yaml")
+    static_config_path = Path("src/config/static_config.yaml")
     search_config = load_config(search_config_path)
     static_config = load_config(static_config_path)
 
-    optuna.logging.set_verbosity(optuna.logging.INFO)
-    optuna.logging.get_logger("optuna").addHandler(logging.StreamHandler(sys.stdout))
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if torch.backends.mps.is_available() and torch.backends.mps.is_built():
+        device = torch.device("mps")
+    elif torch.cuda.is_available():
+        device = torch.device("cuda")
+    else:
+        device = torch.device("cpu")
     print(f"Using device: {device}")
 
     train_loader, val_loader, test_loader = DataLoaderManager.setup_dataloaders(
@@ -49,7 +50,6 @@ def main():
         total_trials=static_config["total_trials"],
         num_classes=static_config["num_classes"],
         trainer=trainer,
-        test_loader=test_loader,
         config=search_config,
         study_name="cnn_hyperparameter_search",
         direction=static_config["direction"],

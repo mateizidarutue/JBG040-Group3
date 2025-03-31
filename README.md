@@ -34,12 +34,12 @@ source .venv/bin/activate
 2. Install dependencies:
 
 ```bash
-# For CPU-only
+# For MPS / CPU-only
 pip install -r requirements.txt
 
 # For CUDA-enabled GPU (recommended)
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
 pip install -r requirements.txt
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
 ```
 
 3. Create a `data` folder in the project root and place your dataset files there.
@@ -59,7 +59,7 @@ pip install -r requirements.txt
 To train a single model with predefined configuration:
 
 ```bash
-python -m train_with_config
+python -m src.train_from_config
 ```
 
 This uses `src/config/model_config.json` and saves results to `model_output/`.

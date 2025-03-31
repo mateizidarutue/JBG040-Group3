@@ -1,10 +1,11 @@
-import torch.nn as nn
-from src.models.base_model import BaseModel
-from src.utils.activation_factory import ActivationFactory
-from src.utils.weight_init_factory import WeightInitFactory
 import torch
-from typing import Dict, Any
+import torch.nn as nn
 from torch import Tensor
+from typing import Dict, Any
+
+from src.models.base_model import BaseModel
+from src.factories.activation_factory import ActivationFactory
+from src.factories.weight_init_factory import WeightInitFactory
 
 
 class CNN(BaseModel):

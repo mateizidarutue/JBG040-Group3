@@ -1,14 +1,13 @@
 import optuna
-from typing import Dict, List, Any
-
 from optuna.study import MaxTrialsCallback
-from src.search.param_sampler import ParamSampler
-from torch.utils.data import DataLoader
-from src.trainer.trainer import Trainer
-import torch
-import json
+from typing import Dict, Any
 import os
 from dotenv import load_dotenv
+
+from src.search.param_sampler import ParamSampler
+from src.trainer.trainer import Trainer
+from src.types.train_return_type import TrainReturnType
+
 
 load_dotenv()
 
@@ -22,7 +21,6 @@ class OptunaBayesHyperband:
         total_trials: int,
         num_classes: int,
         trainer: Trainer,
-        test_loader: DataLoader,
         config: Dict[str, Any],
         study_name: str = "hyperparameter_search",
         direction: str = "minimize",
@@ -32,7 +30,6 @@ class OptunaBayesHyperband:
         self.total_trials = total_trials
         self.num_classes = num_classes
         self.trainer = trainer
-        self.test_loader = test_loader
         self.num_epochs = max_budget
 
         self.pruner = optuna.pruners.HyperbandPruner(
@@ -56,16 +53,7 @@ class OptunaBayesHyperband:
     def objective(self, trial: optuna.Trial):
         params = ParamSampler.suggest_params(trial, self.config)
 
-        result, model = self.trainer.train(trial, params, self.num_epochs)
-
-        test_loss, metrics = self.trainer.test(model, self.test_loader, params, True)
-
-        trial.set_user_attr("test_loss", test_loss)
-        trial.set_user_attr("metrics", metrics)
-
-        model_path = f"completed_models/model_trial_{trial.number}.pt"
-        os.makedirs(os.path.dirname(model_path), exist_ok=True)
-        torch.save(model.state_dict(), model_path)
+        result = self.trainer.train(params, self.num_epochs, TrainReturnType.SCORE, trial)
 
         return result
 

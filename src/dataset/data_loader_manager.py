@@ -1,8 +1,8 @@
 import torch
 from pathlib import Path
 from torch.utils.data import DataLoader, WeightedRandomSampler, random_split
+
 from src.dataset.image_dataset import ImageDataset
-import os
 
 
 class DataLoaderManager:
@@ -35,8 +35,6 @@ class DataLoaderManager:
         sampler = WeightedRandomSampler(
             weights=sample_weights, num_samples=len(sample_weights), replacement=True
         )
-
-        num_workers = os.cpu_count() // 2
 
         train_loader = DataLoader(
             train_dataset,
