@@ -1,6 +1,7 @@
 from pathlib import Path
 import torch
 import yaml
+from collections import defaultdict
 
 from src.trainer.trainer import Trainer
 from src.search.optuna_bayes_hyperband import OptunaBayesHyperband
@@ -57,16 +58,35 @@ def main() -> None:
 
     search.run()
 
-    sample_image, sample_label = next(iter(test_loader))
-    sample_image = sample_image[0].unsqueeze(0).to(device)
+    #sample_image, sample_label = next(iter(test_loader))
+    #sample_image = sample_image[0].unsqueeze(0).to(device)
 
     best_model = trainer._model
     best_model.to(device)
     best_model.eval()
 
-    features, logits = best_model(sample_image, return_features=True)
-    predicted_class = torch.argmax(logits, dim=1).item()
-    generate_cam(best_model, sample_image, class_index=predicted_class)
+    seen_classes = set()
+    max_classes = static_config["num_classes"]
+
+    for images, labels in test_loader:
+        for img, label in zip(images, labels):
+            label = label.item()
+            if label in seen_classes:
+                continue
+
+            img_input = img.unsqueeze(0).to(device)
+
+            features, logits = best_model(img_input, return_features=True)
+            predicted_class = torch.argmax(logits, dim=1).item()
+
+            print(f"Visualizing CAM for true class: {label}, predicted: {predicted_class}")
+            generate_cam(best_model, img_input, class_index=predicted_class)
+
+            seen_classes.add(label)
+            if len(seen_classes) == max_classes:
+                break
+        if len(seen_classes) == max_classes:
+            break
 
 
 if __name__ == "__main__":
