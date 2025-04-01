@@ -5,7 +5,7 @@ import yaml
 from src.trainer.trainer import Trainer
 from src.search.optuna_bayes_hyperband import OptunaBayesHyperband
 from src.dataset.data_loader_manager import DataLoaderManager
-
+from src.cam import generate_cam
 
 def load_config(config_path: Path) -> dict:
     with open(config_path, "r") as f:
@@ -56,6 +56,17 @@ def main() -> None:
     )
 
     search.run()
+
+    sample_image, sample_label = next(iter(test_loader))
+    sample_image = sample_image[0].unsqueeze(0).to(device)
+
+    best_model = trainer._model
+    best_model.to(device)
+    best_model.eval()
+
+    features, logits = best_model(sample_image, return_features=True)
+    predicted_class = torch.argmax(logits, dim=1).item()
+    generate_cam(best_model, sample_image, class_index=predicted_class)
 
 
 if __name__ == "__main__":

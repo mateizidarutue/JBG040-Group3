@@ -118,6 +118,11 @@ class Trainer:
                 metrics=metrics,
                 trial=trial,
             )
+        self._model = model
+
+        @property
+        def model(self):
+            return self._model
 
         match return_type:
             case TrainReturnType.SCORE:

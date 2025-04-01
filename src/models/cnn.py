@@ -108,7 +108,7 @@ class CNN(BaseModel):
         )
         self.apply(initializer)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, return_features: bool = False) -> torch.Tensor:
         if self.params["use_min_max_scaling"]:
             x = torch.stack(
                 [
@@ -120,7 +120,12 @@ class CNN(BaseModel):
                     for xi in x
                 ]
             )
-        x = self.conv_layers(x)
-        x = self.flatten(x)
-        x = self.fc_layers(x)
-        return x
+
+        features = self.conv_layers(x)  #Keep for CAM
+        x = self.flatten(features)
+        logits = self.fc_layers(x)
+
+        if return_features:
+            return features, logits  # Used for CAM
+
+        return logits

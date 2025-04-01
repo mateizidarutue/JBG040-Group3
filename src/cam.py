@@ -10,11 +10,12 @@ def generate_cam(model, image, class_index):
         feature_maps, output = model(image, return_features=True)
 
     # Get weights of  last fully connected layer
-    fclay_weights = model.linear_layers[-1].weight[class_index]
+    fclay_weights = model.fc_layers[-1].weight[class_index]
+
 
     # Convert feature maps to numpy
     feature_maps = feature_maps.squeeze(0).cpu().numpy()  # Remove batch dim
-    fc_weights = fclay_weights.cpu().numpy()  # Convert weights to numpy
+    fc_weights = fclay_weights.detach().cpu().numpy()
 
     # Compute the weighted sum of feature maps
     cam = np.zeros(feature_maps.shape[1:], dtype=np.float32)
