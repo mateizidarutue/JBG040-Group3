@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 def generate_cam(model, image, class_index):
     model.eval()
     with torch.no_grad():
-        feature_maps, output = model(image)
+        feature_maps, output = model(image, return_features=True)
 
     # Get weights of  last fully connected layer
     fclay_weights = model.linear_layers[-1].weight[class_index]
