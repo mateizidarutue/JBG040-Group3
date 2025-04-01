@@ -7,7 +7,7 @@ from src.search.optuna_bayes_hyperband import OptunaBayesHyperband
 from src.dataset.data_loader_manager import DataLoaderManager
 from src.ethics.cam import generate_cam
 from src.ethics.saliency_map import generate_saliency_map
-
+from src.ethics.gradcam import generate_gradcam
 def load_config(config_path: Path) -> dict:
     with open(config_path, "r") as f:
         return yaml.safe_load(f)
@@ -87,6 +87,8 @@ def main() -> None:
             # Generate Saliency Map
             saliency_input = img_input.clone().detach().requires_grad_(True)
             generate_saliency_map(best_model, saliency_input, class_index=predicted_class)
+            #generate gradcam
+            generate_gradcam(best_model, img_input, class_index=predicted_class, true_class=label)
 
             if predicted_class == label:
                 cor += 1
