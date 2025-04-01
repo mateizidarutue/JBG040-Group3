@@ -20,7 +20,11 @@ def generate_cam(model, image, class_index, true_class=None):
         cam += fc_weights[i] * feature_maps[i]
     #normalize cam
     cam = np.maximum(cam, 0)
-    cam = cam / np.max(cam)
+    if np.max(cam) > 0:
+        cam = cam / (np.max(cam) + 1e-8)
+    else:
+        cam = np.zeros_like(cam)
+    cam = np.nan_to_num(cam)
 
     cam = cv2.resize(cam, (128, 128))
 
