@@ -7,6 +7,7 @@ This project implements hyperparameter optimization for CNN models using Tree-st
 - `src/`
   - `config/`: Configuration files for model and search space
   - `dataset/`: Dataset handling and processing
+  - `ethics/`: Functions used to address ethical concerns
   - `models/`: CNN model implementations
   - `search/`: Hyperparameter optimization implementation
   - `trainer/`: Model training logic
