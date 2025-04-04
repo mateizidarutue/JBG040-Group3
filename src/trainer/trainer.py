@@ -15,7 +15,6 @@ from src.factories.augmentation_factory import AugmentationFactory
 from src.utils.metrics_calculator import MetricsCalculator
 from src.types.evaluation_metrics import EvaluationMetrics
 from src.utils.model_saver import ModelSaver
-from src.types.train_return_type import TrainReturnType
 from src.types.trial_type import TrialType
 
 
@@ -40,8 +39,7 @@ class Trainer:
     def train(
         self, 
         params: Dict[str, Any], 
-        num_epochs: int, 
-        return_type: TrainReturnType = TrainReturnType.SCORE, 
+        num_epochs: int,
         trial: Optional[Trial] = None
     ) -> float:
         model = CNN(params, self.num_classes, self.input_size).to(self.device)
@@ -66,7 +64,7 @@ class Trainer:
                 images = images.float()
                 labels: Tensor = labels.to(self.device)
                 optimizer.zero_grad()
-                outputs: Tensor = model(images)
+                _, outputs = model(images)
                 loss: Tensor = loss_fn(outputs, labels)
                 loss.backward()
 
@@ -86,20 +84,26 @@ class Trainer:
                 {"train_loss": f"{avg_loss:.4f}", "val_loss": f"{val_loss:.4f}", "score": f"{metrics.score:.4f}"}
             )
 
+            combined_score = (
+                1.0 * metrics.score +
+                0.5 * -metrics.accuracy +
+                0.5 * -metrics.macro_f1
+            )
+
             if trial:
-                trial.report(metrics.score, step=epoch)
+                trial.report(combined_score, step=epoch)
 
                 if trial.should_prune():
-                    test_loss, metrics = self.test_test(model, params, True)
+                    test_loss_pruned, metrics_test_pruned = self.test_test(model, params, True)
 
                     ModelSaver.save_model(
-                            model=model,
-                            trial_type=TrialType.PRUNED,
-                            params=params,
-                            test_loss=test_loss,
-                            metrics=metrics,
-                            trial=trial,
-                        )
+                        model=model,
+                        trial_type=TrialType.PRUNED,
+                        params=params,
+                        test_loss=test_loss_pruned,
+                        metrics=metrics_test_pruned,
+                        trial=trial,
+                    )
                     
                     raise optuna.exceptions.TrialPruned()
 
@@ -108,31 +112,18 @@ class Trainer:
             else:
                 scheduler.step()
 
-        test_loss, metrics = self.test_test(model, params, True)
+        test_loss, metrics_test = self.test_test(model, params, True)
 
         ModelSaver.save_model(
-                model=model,
-                trial_type=TrialType.COMPLETED,
-                params=params,
-                test_loss=test_loss,
-                metrics=metrics,
-                trial=trial,
-            )
-        self._model = model
+            model=model,
+            trial_type=TrialType.COMPLETED,
+            params=params,
+            test_loss=test_loss,
+            metrics=metrics_test,
+            trial=trial,
+        )
 
-        @property
-        def model(self):
-            return self._model
-
-        match return_type:
-            case TrainReturnType.SCORE:
-                result = metrics.score
-            case TrainReturnType.VAL_LOSS:
-                result = val_loss
-            case TrainReturnType.TEST_LOSS:
-                result = test_loss
-
-        return result
+        return combined_score
 
     def test_val(
         self,
@@ -166,7 +157,7 @@ class Trainer:
             for images, labels in data_loader:
                 images: Tensor = images.to(self.device)
                 labels: Tensor = labels.to(self.device)
-                outputs: Tensor = model(images)
+                _, outputs = model(images)
                 loss: Tensor = LossFactory.get_loss(params, self.num_classes)(
                     outputs, labels
                 ).to(self.device)

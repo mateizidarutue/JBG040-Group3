@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from torch import Tensor
-from typing import Dict, Any
+from typing import Dict, Any, Tuple
 
 from src.models.base_model import BaseModel
 from src.factories.activation_factory import ActivationFactory
@@ -108,7 +108,7 @@ class CNN(BaseModel):
         )
         self.apply(initializer)
 
-    def forward(self, x: torch.Tensor, return_features: bool = False) -> torch.Tensor:
+    def forward(self, x: Tensor) -> Tuple[Tensor, Tensor]:
         if self.params["use_min_max_scaling"]:
             x = torch.stack(
                 [
@@ -121,11 +121,8 @@ class CNN(BaseModel):
                 ]
             )
 
-        features = self.conv_layers(x)  #Keep for CAM
-        x = self.flatten(features)
-        logits = self.fc_layers(x)
+        features: Tensor = self.conv_layers(x)
+        flatten: Tensor = self.flatten(features)
+        logits: Tensor = self.fc_layers(flatten)
 
-        if return_features:
-            return features, logits  # Used for CAM
-
-        return logits
+        return features, logits

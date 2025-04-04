@@ -186,16 +186,16 @@ class ParamSampler:
             "rotation_enabled", aug_conf["rotation"]["enabled"]
         )
 
-        params["crop_enabled"] = trial.suggest_categorical(
-            "crop_enabled", aug_conf["crop"]["enabled"]
-        )
-        if params["crop_enabled"]:
-            params["crop_size"] = trial.suggest_int(
-                "crop_size",
-                aug_conf["crop"]["size"]["min"],
-                aug_conf["crop"]["size"]["max"],
-            )
-        else:
-            params["crop_size"] = None
+        # params["crop_enabled"] = trial.suggest_categorical(
+        #     "crop_enabled", aug_conf["crop"]["enabled"]
+        # )
+        # if params["crop_enabled"]:
+        #     params["crop_size"] = trial.suggest_int(
+        #         "crop_size",
+        #         aug_conf["crop"]["size"]["min"],
+        #         aug_conf["crop"]["size"]["max"],
+        #     )
+        # else:
+        #     params["crop_size"] = None
 
         return params

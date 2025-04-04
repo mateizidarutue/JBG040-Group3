@@ -7,7 +7,7 @@ def generate_saliency_map(model, image, class_index=None):
     model.eval()
     image.requires_grad_()
 
-    output = model(image)
+    _, output = model(image)
 
     if class_index is None:
         class_index = torch.argmax(output, dim=1).item()
@@ -46,4 +46,6 @@ def generate_saliency_map(model, image, class_index=None):
     plt.imshow(overlayed)
     plt.axis("off")
     plt.title(f"Saliency Map for Class {class_index}")
+    plt.savefig(f"cam_outputs/saliency_class_{class_index}.png", bbox_inches='tight')
     plt.show()
+    

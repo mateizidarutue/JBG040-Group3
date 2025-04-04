@@ -25,7 +25,7 @@ def generate_gradcam(model, image, class_index=None, true_class=None):
     backward_handle = target_layer.register_backward_hook(backward_hook)
 
     image = image.requires_grad_()
-    output = model(image)
+    _, output = model(image)
 
     if class_index is None:
         class_index = torch.argmax(output, dim=1).item()
@@ -80,4 +80,5 @@ def generate_gradcam(model, image, class_index=None, true_class=None):
     plt.imshow(overlayed)
     plt.axis("off")
     plt.title(f"Grad-CAM++ — True: {true_class} | Predicted: {class_index}")
+    plt.savefig(f"cam_outputs/gradcam_true_{true_class}_pred_{class_index}.png", bbox_inches='tight')
     plt.show()

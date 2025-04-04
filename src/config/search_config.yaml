@@ -75,8 +75,8 @@ augmentation:
     max: 0.5
   rotation:
     enabled: [true, false]
-  crop:
-    enabled: [true, false]
-    size:
-      min: 100
-      max: 128
+  # crop:
+  #   enabled: [true, false]
+  #   size:
+  #     min: 100
+  #     max: 128

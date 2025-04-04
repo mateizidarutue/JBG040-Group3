@@ -1,12 +1,11 @@
 import optuna
 from optuna.study import MaxTrialsCallback
-from typing import Dict, Any
+from typing import Dict, Any, Tuple
 import os
 from dotenv import load_dotenv
 
 from src.search.param_sampler import ParamSampler
 from src.trainer.trainer import Trainer
-from src.types.train_return_type import TrainReturnType
 
 
 load_dotenv()
@@ -23,7 +22,6 @@ class OptunaBayesHyperband:
         trainer: Trainer,
         config: Dict[str, Any],
         study_name: str = "hyperparameter_search",
-        direction: str = "minimize",
         storage_connection_string: str = os.getenv("STORAGE_CONNECTION_STRING"),
     ):
         self.config = config
@@ -44,18 +42,18 @@ class OptunaBayesHyperband:
         self.study = optuna.create_study(
             study_name=study_name,
             storage=storage_connection_string,
-            direction=direction,
+            direction="minimize",
             sampler=self.sampler,
             load_if_exists=True,
             pruner=self.pruner,
         )
 
-    def objective(self, trial: optuna.Trial):
+    def objective(self, trial: optuna.Trial) -> float:
         params = ParamSampler.suggest_params(trial, self.config)
 
-        result = self.trainer.train(params, self.num_epochs, TrainReturnType.SCORE, trial)
+        combined_score = self.trainer.train(params, self.num_epochs, trial)
 
-        return result
+        return combined_score
 
     def run(self):
         print(f"Starting optimization with {self.total_trials} total trials...")

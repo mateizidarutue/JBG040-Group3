@@ -1,5 +1,7 @@
 import torchvision.transforms as transforms
 from typing import Dict, Any
+from torchvision.transforms import functional as F
+from PIL import Image
 
 
 class AugmentationFactory:
@@ -12,13 +14,16 @@ class AugmentationFactory:
         if config["rotation_enabled"]:
             augmentations.append(transforms.RandomRotation(degrees=(-5, 5)))
 
-        if config["crop_enabled"]:
-            crop_size = config["crop_size"]
-            augmentations.append(
-                transforms.RandomApply(
-                    [transforms.RandomResizedCrop(size=crop_size)], p=0.3
-                )
-            )
+        # if config["crop_enabled"]:
+        #     crop_size = config["crop_size"]
+        #     augmentations.append(
+        #         transforms.RandomApply(
+        #             [transforms.RandomResizedCrop(size=crop_size)], p=0.3
+        #         )
+        #     )
+
+        augmentations.append(FixedLungCrop())
+        augmentations.append(transforms.Resize(input_size)) 
 
         if config["brightness_enabled"] or config["contrast_enabled"]:
             brightness = config["brightness"] if config["brightness_enabled"] else 0
@@ -33,3 +38,7 @@ class AugmentationFactory:
         augmentations.append(transforms.Resize(input_size))
 
         return transforms.Compose(augmentations)
+
+class FixedLungCrop:
+    def __call__(self, img: Image.Image) -> Image.Image:
+        return F.crop(img, top=10, left=12, height=98, width=104)

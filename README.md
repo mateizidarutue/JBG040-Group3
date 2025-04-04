@@ -79,7 +79,7 @@ python -m src.main
 2. Parallel processing using batch script (Windows only):
 
 ```bash
-run_scripts.bat <num_parallel_processes>
+run_scripts.bat <num_parallel_processes> // 4 usually works the best
 ```
 
 Models will be saved to:
@@ -135,3 +135,39 @@ For distributed optimization (works only on Windows):
 3. Use `run_scripts.bat` with desired parallel process count
 
 The system uses Optuna with optional database backend for parallel trial processing.
+
+## Best Model Retrieval
+
+To identify the best-performing models after a hyperparameter search, use:
+
+```bash
+python -m src.get_best_model
+```
+
+This script will:
+
+- Scan all completed trials in saved_outputs/completed/
+
+- Sort them based on final validation loss or accuracy
+
+- Print a ranked list of top-performing models
+
+This helps you easily choose the most promising models for deployment or further analysis.
+
+## CAM & Saliency Visualization
+
+After training or optimizing models, you can visualize Class Activation Maps (CAM), Grad-CAM++, and Saliency Maps for model interpretability:
+
+```bash
+python -m src.run_cam --trial <trial_number>
+```
+This script will:
+
+- Load the model from saved_outputs/completed/trial_<trial_number>/model.pt
+
+- Visualize and save CAM, Grad-CAM++, and Saliency Maps for one image per class
+
+- Store the outputs in the cam_outputs/ folder
+
+Ensure this directory exists or will be automatically created during execution.
+

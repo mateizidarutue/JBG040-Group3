@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 def generate_cam(model, image, class_index, true_class=None):
     model.eval()
     with torch.no_grad():
-        feature_maps, output = model(image, return_features=True)
+        feature_maps, _ = model(image)
 
     # Get weights of  last fully connected layer
     fclay_weights = model.fc_layers[-1].weight[class_index]
@@ -44,4 +44,5 @@ def generate_cam(model, image, class_index, true_class=None):
     plt.imshow(overlayed_img)
     plt.axis("off")
     plt.title(f"CAM — True: {true_class} | Predicted: {class_index}")
+    plt.savefig(f"cam_outputs/cam_true_{true_class}_pred_{class_index}.png", bbox_inches='tight')
     plt.show()

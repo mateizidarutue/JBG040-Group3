@@ -4,7 +4,6 @@ eta: 3
 total_trials: 50
 batch_size: 256
 input_size: 128
-direction: "minimize"
 num_classes: 6
 train_data: "data/X_train.npy"
 train_labels: "data/Y_train.npy"
