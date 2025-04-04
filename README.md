@@ -171,3 +171,10 @@ This script will:
 
 Ensure this directory exists or will be automatically created during execution.
 
+## EDA
+
+To run eda:
+```bash
+python -m eda.eda
+```
+
