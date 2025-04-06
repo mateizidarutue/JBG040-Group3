@@ -8,7 +8,6 @@ from src.models.cnn import CNN
 from src.dataset.data_loader_manager import DataLoaderManager
 from src.ethics.cam import generate_cam
 from src.ethics.saliency_map import generate_saliency_map
-from src.ethics.gradcam import generate_gradcam
 from src.utils.config_loader import load_config
 
 def load_model(model_path: Path, params: dict, num_classes: int, input_size: int, device: torch.device):
@@ -72,7 +71,7 @@ def main():
             print(f"Visualizing CAM for true class: {label}, predicted: {predicted_class}")
             generate_cam(model, img_input, class_index=predicted_class, true_class=label)
             generate_saliency_map(model, img_input.clone().detach().requires_grad_(True), class_index=predicted_class)
-            generate_gradcam(model, img_input, class_index=predicted_class, true_class=label)
+
 
             if predicted_class == label:
                 cor += 1
