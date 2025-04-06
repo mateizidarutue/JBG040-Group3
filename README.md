@@ -156,7 +156,7 @@ This helps you easily choose the most promising models for deployment or further
 
 ## CAM & Saliency Visualization
 
-After training or optimizing models, you can visualize Class Activation Maps (CAM), Grad-CAM++, and Saliency Maps for model interpretability:
+After training or optimizing models, you can visualize Class Activation Maps (CAM) and Saliency Maps for model interpretability:
 
 ```bash
 python -m src.run_cam --trial <trial_number>
@@ -165,7 +165,7 @@ This script will:
 
 - Load the model from saved_outputs/completed/trial_<trial_number>/model.pt
 
-- Visualize and save CAM, Grad-CAM++, and Saliency Maps for one image per class
+- Visualize and save CAM and Saliency Maps for one image per class
 
 - Store the outputs in the cam_outputs/ folder
 

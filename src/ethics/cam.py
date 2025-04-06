@@ -31,7 +31,6 @@ def generate_cam(model, image, class_index, true_class=None):
     # convert cam to heatmap
     heatmap = cv2.applyColorMap(np.uint8(255 * cam), cv2.COLORMAP_JET)
 
-
     orig_img = image.squeeze(0).squeeze(0).cpu().numpy()
     #normalize the original image and convert to rgb
     orig_img = (orig_img - orig_img.min()) / (orig_img.max() - orig_img.min())
