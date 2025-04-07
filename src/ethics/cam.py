@@ -14,11 +14,11 @@ def generate_cam(model, image, class_index, true_class=None):
     feature_maps = feature_maps.squeeze(0).cpu().numpy()  # Remove batch dim
     fc_weights = fclay_weights.detach().cpu().numpy()
 
-    #Compute weighted sum of feature maps
+    # Compute weighted sum of feature maps
     cam = np.zeros(feature_maps.shape[1:], dtype=np.float32)
     for i in range(len(fc_weights)):
         cam += fc_weights[i] * feature_maps[i]
-    #normalize cam
+    # normalize cam
     cam = np.maximum(cam, 0)
     if np.max(cam) > 0:
         cam = cam / (np.max(cam) + 1e-8)
@@ -32,7 +32,7 @@ def generate_cam(model, image, class_index, true_class=None):
     heatmap = cv2.applyColorMap(np.uint8(255 * cam), cv2.COLORMAP_JET)
 
     orig_img = image.squeeze(0).squeeze(0).cpu().numpy()
-    #normalize the original image and convert to rgb
+    # normalize the original image and convert to rgb
     orig_img = (orig_img - orig_img.min()) / (orig_img.max() - orig_img.min())
     orig_img = np.stack([orig_img] * 3, axis=-1)
 
@@ -43,5 +43,7 @@ def generate_cam(model, image, class_index, true_class=None):
     plt.imshow(overlayed_img)
     plt.axis("off")
     plt.title(f"CAM — True: {true_class} | Predicted: {class_index}")
-    plt.savefig(f"cam_outputs/cam_true_{true_class}_pred_{class_index}.png", bbox_inches='tight')
+    plt.savefig(
+        f"cam_outputs/cam_true_{true_class}_pred_{class_index}.png", bbox_inches="tight"
+    )
     plt.show()

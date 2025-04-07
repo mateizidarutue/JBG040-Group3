@@ -7,7 +7,6 @@ from src.dataset.data_loader_manager import DataLoaderManager
 from src.trainer.trainer import Trainer
 
 
-
 def train_single_config(
     params, static_config, train_loader, val_loader, test_loader, device, run_id
 ):

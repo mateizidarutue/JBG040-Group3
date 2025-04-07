@@ -3,12 +3,14 @@ import torch
 
 
 def initialize_bias_monitor():
-    return defaultdict(lambda: {
-        "total": 0,
-        "correct": 0,
-        "predicted_as": defaultdict(int),
-        "confidences": []
-    })
+    return defaultdict(
+        lambda: {
+            "total": 0,
+            "correct": 0,
+            "predicted_as": defaultdict(int),
+            "confidences": [],
+        }
+    )
 
 
 def update_bias_monitor(monitor, true_class, predicted_class, logits):
@@ -28,7 +30,11 @@ def generate_bias_report(monitor):
         total = stats["total"]
         correct = stats["correct"]
         acc = correct / total if total > 0 else 0
-        avg_conf = sum(stats["confidences"]) / len(stats["confidences"]) if stats["confidences"] else 0
+        avg_conf = (
+            sum(stats["confidences"]) / len(stats["confidences"])
+            if stats["confidences"]
+            else 0
+        )
 
         print(f"\n Class {cls}:")
         print(f"   Accuracy: {acc:.2%}")

@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import torch.nn as nn
 
+
 class BaseModel(nn.Module, ABC):
     def __init__(self):
         super(BaseModel, self).__init__()

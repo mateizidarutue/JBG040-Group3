@@ -51,7 +51,10 @@ def main() -> None:
 
     search.run()
 
-    print("⚠️ATTENTION! This is just a prediction, do not base your decisions solely on it.⚠️")
+    print(
+        "⚠️ATTENTION! This is just a prediction, do not base your decisions solely on it.⚠️"
+    )
+
 
 if __name__ == "__main__":
     main()

@@ -1,6 +1,6 @@
 import optuna
 from optuna.study import MaxTrialsCallback
-from typing import Dict, Any, Tuple
+from typing import Dict, Any
 import os
 from dotenv import load_dotenv
 
