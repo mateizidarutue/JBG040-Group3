@@ -3,6 +3,7 @@ import numpy as np
 import cv2
 import matplotlib.pyplot as plt
 
+
 def generate_saliency_map(model, image, class_index=None):
     model.eval()
     image.requires_grad_()
@@ -36,7 +37,7 @@ def generate_saliency_map(model, image, class_index=None):
     if orig_img.ndim == 3:
         orig_img = orig_img[0]  # first channel if needed
     orig_img = (orig_img - orig_img.min()) / (orig_img.max() - orig_img.min() + 1e-8)
-    orig_img = np.stack([orig_img]*3, axis=-1)
+    orig_img = np.stack([orig_img] * 3, axis=-1)
 
     # Blend heatmap + original image
     overlayed = 0.5 * heatmap / 255 + 0.5 * orig_img
@@ -46,6 +47,5 @@ def generate_saliency_map(model, image, class_index=None):
     plt.imshow(overlayed)
     plt.axis("off")
     plt.title(f"Saliency Map for Class {class_index}")
-    plt.savefig(f"cam_outputs/saliency_class_{class_index}.png", bbox_inches='tight')
+    plt.savefig(f"cam_outputs/saliency_class_{class_index}.png", bbox_inches="tight")
     plt.show()
-    

@@ -26,17 +26,17 @@ for trial_dir in sorted(base_dir.glob("trial_*")):
                 continue
 
             combined_score = (
-                -0.5 * score +
-                0.5 * accuracy +
-                0.5 * macro_f1 + 
-                0.5 * macro_precision +
-                0.5 * macro_recall
+                -0.5 * score
+                + 0.5 * accuracy
+                + 0.5 * macro_f1
+                + 0.5 * macro_precision
+                + 0.5 * macro_recall
             )
 
             result = {
                 "file": str(json_file),
                 "combined_score": combined_score,
-                **metrics
+                **metrics,
             }
 
             results.append(result)

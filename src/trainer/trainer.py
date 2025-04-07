@@ -37,10 +37,7 @@ class Trainer:
         self.num_classes = num_classes
 
     def train(
-        self, 
-        params: Dict[str, Any], 
-        num_epochs: int,
-        trial: Optional[Trial] = None
+        self, params: Dict[str, Any], num_epochs: int, trial: Optional[Trial] = None
     ) -> float:
         model = CNN(params, self.num_classes, self.input_size).to(self.device)
         loss_fn = LossFactory.get_loss(params, self.num_classes).to(self.device)
@@ -51,9 +48,7 @@ class Trainer:
         model.train()
 
         desc = f"Trial {trial.number} Epochs" if trial else "Training Epochs"
-        epoch_pbar = tqdm(
-            range(1, num_epochs + 1), desc=desc, leave=True
-        )
+        epoch_pbar = tqdm(range(1, num_epochs + 1), desc=desc, leave=True)
         for epoch in epoch_pbar:
             epoch_losses = []
 
@@ -81,20 +76,24 @@ class Trainer:
             val_loss, metrics = self.test_val(model, params, True)
 
             epoch_pbar.set_postfix(
-                {"train_loss": f"{avg_loss:.4f}", "val_loss": f"{val_loss:.4f}", "score": f"{metrics.score:.4f}"}
+                {
+                    "train_loss": f"{avg_loss:.4f}",
+                    "val_loss": f"{val_loss:.4f}",
+                    "score": f"{metrics.score:.4f}",
+                }
             )
 
             combined_score = (
-                1.0 * metrics.score +
-                0.5 * -metrics.accuracy +
-                0.5 * -metrics.macro_f1
+                1.0 * metrics.score + 0.5 * -metrics.accuracy + 0.5 * -metrics.macro_f1
             )
 
             if trial:
                 trial.report(combined_score, step=epoch)
 
                 if trial.should_prune():
-                    test_loss_pruned, metrics_test_pruned = self.test_test(model, params, True)
+                    test_loss_pruned, metrics_test_pruned = self.test_test(
+                        model, params, True
+                    )
 
                     ModelSaver.save_model(
                         model=model,
@@ -104,7 +103,7 @@ class Trainer:
                         metrics=metrics_test_pruned,
                         trial=trial,
                     )
-                    
+
                     raise optuna.exceptions.TrialPruned()
 
             if isinstance(scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
